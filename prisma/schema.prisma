@@ -9,8 +9,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model User {
@@ -67,11 +67,11 @@ model Transaction {
   recipientPhone        String   @map("recipient_phone")
   sourceCurrency        String   @map("source_currency")
   targetCurrency        String   @map("target_currency")
-  sourceAmount          Decimal  @map("source_amount") @db.Decimal(18, 8)
-  targetAmount          Decimal  @map("target_amount") @db.Decimal(18, 8)
-  exchangeRate          Decimal  @map("exchange_rate") @db.Decimal(18, 8)
-  feeAmount             Decimal  @map("fee_amount") @db.Decimal(18, 8)
-  totalAmount           Decimal  @map("total_amount") @db.Decimal(18, 8)
+  sourceAmount          Decimal  @map("source_amount")
+  targetAmount          Decimal  @map("target_amount")
+  exchangeRate          Decimal  @map("exchange_rate")
+  feeAmount             Decimal  @map("fee_amount")
+  totalAmount           Decimal  @map("total_amount")
   status                TransactionStatus @default(PENDING)
   blockchainTxHash      String?  @map("blockchain_tx_hash")
   recipientBankAccount  String?  @map("recipient_bank_account")

@@ -1,5 +1,13 @@
 import rateLimit from 'express-rate-limit';
+import { Request } from 'express';
 import { config } from '../utils/config';
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    whatsappNumber: string;
+  };
+}
 
 export const apiRateLimit = rateLimit({
   windowMs: config.rateLimiting.windowMs,
@@ -16,10 +24,6 @@ export const whatsappRateLimit = rateLimit({
   max: 10, // 10 messages per minute
   message: {
     error: 'Too many WhatsApp messages, please slow down'
-  },
-  keyGenerator: (req) => {
-    // Rate limit by WhatsApp phone number
-    return req.body?.entry?.[0]?.changes?.[0]?.value?.messages?.[0]?.from || req.ip;
   }
 });
 
@@ -28,8 +32,5 @@ export const kycRateLimit = rateLimit({
   max: 3, // 3 KYC submissions per day
   message: {
     error: 'Too many KYC submissions, please try again tomorrow'
-  },
-  keyGenerator: (req) => {
-    return req.user?.id || req.ip;
   }
 });

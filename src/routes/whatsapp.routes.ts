@@ -229,7 +229,7 @@ async function handleHistoryIntent(user: any, phoneNumber: string): Promise<stri
                     tx.status === 'PROCESSING' ? '⏳' : 
                     tx.status === 'FAILED' ? '❌' : '⏳';
       
-      message += `${index + 1}. ${status} ${tx.sourceAmount} ${tx.sourceCurrency} → Rp ${tx.targetAmount.toLocaleString('id-ID')}
+      message += `${index + 1}. ${status} ${tx.sourceAmount} ${tx.sourceCurrency} → Rp ${Number(tx.targetAmount).toLocaleString('id-ID')}
    📱 Ke: ${tx.recipientPhone}
    📅 ${date}
    

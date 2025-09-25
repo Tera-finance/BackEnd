@@ -1,12 +1,9 @@
-import { create } from 'ipfs-http-client';
 import { config } from '../utils/config';
 import { EncryptionUtil } from '../utils/encryption';
 
 export class IPFSService {
-  private ipfs: any;
-
   constructor() {
-    this.ipfs = create({ url: config.ipfs.apiUrl });
+    // Using mock IPFS for development
   }
 
   async uploadDocument(fileBuffer: Buffer, metadata: any): Promise<string> {
@@ -19,10 +16,11 @@ export class IPFSService {
 
       const encryptedData = EncryptionUtil.encrypt(JSON.stringify(documentData));
       
-      const result = await this.ipfs.add(encryptedData);
+      // Mock IPFS hash generation
+      const mockHash = `Qm${Math.random().toString(36).substring(2, 48)}`;
       
-      console.log('Document uploaded to IPFS:', result.path);
-      return result.path;
+      console.log('Document uploaded to IPFS (mock):', mockHash);
+      return mockHash;
     } catch (error) {
       console.error('IPFS upload error:', error);
       throw new Error('Failed to upload document to IPFS');
@@ -31,16 +29,19 @@ export class IPFSService {
 
   async retrieveDocument(ipfsHash: string): Promise<any> {
     try {
-      const chunks = [];
+      // Mock document retrieval
+      console.log('Retrieving document from IPFS (mock):', ipfsHash);
       
-      for await (const chunk of this.ipfs.cat(ipfsHash)) {
-        chunks.push(chunk);
-      }
-      
-      const encryptedData = Buffer.concat(chunks).toString();
-      const decryptedData = EncryptionUtil.decrypt(encryptedData);
-      
-      return JSON.parse(decryptedData);
+      // Return mock document data
+      return {
+        file: 'base64_encoded_mock_file_data',
+        metadata: {
+          fileName: 'mock_document.jpg',
+          mimeType: 'image/jpeg',
+          documentType: 'E_KTP'
+        },
+        timestamp: new Date().toISOString()
+      };
     } catch (error) {
       console.error('IPFS retrieval error:', error);
       throw new Error('Failed to retrieve document from IPFS');

@@ -146,7 +146,7 @@ export class KYCService {
     }
   }
 
-  async getAllPendingKYC(): Promise<KycData[]> {
+  async getAllPendingKYC(): Promise<(KycData & { user: { id: string; whatsappNumber: string; countryCode: string } })[]> {
     try {
       return await prisma.kycData.findMany({
         where: { verificationStatus: 'PENDING' },

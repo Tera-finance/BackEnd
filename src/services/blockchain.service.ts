@@ -2,12 +2,25 @@ import { ethers } from 'ethers';
 import { config } from '../utils/config';
 
 export class BlockchainService {
-  private provider: ethers.JsonRpcProvider;
-  private wallet: ethers.Wallet;
+  private provider?: ethers.JsonRpcProvider;
+  private wallet?: ethers.Wallet;
+  private mockMode: boolean = false;
 
   constructor() {
-    this.provider = new ethers.JsonRpcProvider(config.blockchain.polygonRpcUrl);
-    this.wallet = new ethers.Wallet(config.blockchain.privateKey, this.provider);
+    try {
+      if (config.blockchain.polygonRpcUrl && config.blockchain.privateKey && 
+          !config.blockchain.privateKey.includes('your-')) {
+        this.provider = new ethers.JsonRpcProvider(config.blockchain.polygonRpcUrl);
+        this.wallet = new ethers.Wallet(config.blockchain.privateKey, this.provider);
+        console.log('✅ Blockchain service initialized');
+      } else {
+        this.mockMode = true;
+        console.log('⚠️  Using mock blockchain service (no valid config)');
+      }
+    } catch (error) {
+      this.mockMode = true;
+      console.log('⚠️  Blockchain service error, using mock mode:', error);
+    }
   }
 
   async mintKYCNFT(userId: string, ipfsHash: string): Promise<string> {
@@ -56,6 +69,11 @@ export class BlockchainService {
 
   async getBalance(address: string, tokenAddress?: string): Promise<string> {
     try {
+      if (this.mockMode || !this.provider) {
+        console.log('Getting balance (mock):', address);
+        return tokenAddress ? '100.00' : '1.5';
+      }
+      
       if (tokenAddress) {
         console.log('Getting token balance for:', address);
         return '100.00';

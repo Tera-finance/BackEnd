@@ -262,7 +262,7 @@ router.post('/:transactionId/cancel',
 
 router.get('/rates/current', 
   apiRateLimit, 
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const { from, to } = req.query;
 
@@ -287,7 +287,7 @@ router.get('/rates/current',
 
 router.get('/rates/supported', 
   apiRateLimit, 
-  async (req: Request, res: Response) => {
+  async (req: AuthRequest, res: Response) => {
     try {
       const currencies = await exchangeService.getSupportedCurrencies();
       res.json({ currencies });
