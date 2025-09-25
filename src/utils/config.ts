@@ -6,9 +6,10 @@ export const config = {
   port: parseInt(process.env.PORT || '3000'),
   nodeEnv: process.env.NODE_ENV || 'development',
   
-  database: {
-    url: process.env.DATABASE_URL || 'postgresql://localhost:5432/trustbridge'
-  },
+  supabaseUrl: process.env.SUPABASE_URL || '',
+  supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/trustbridge',
   
   redis: {
     url: process.env.REDIS_URL || 'redis://localhost:6379'

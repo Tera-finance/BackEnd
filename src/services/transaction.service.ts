@@ -1,9 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../utils/database';
+import { supabase, Transaction } from '../utils/database';
 import { BlockchainService } from './blockchain.service';
 import { ExchangeService } from './exchange.service';
 import { WalletService } from './wallet.service';
-import { Transaction, TransactionStatus } from '@prisma/client';
+import { TransactionStatus } from '../types';
 
 export class TransactionService {
   private blockchainService: BlockchainService;

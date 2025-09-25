@@ -6,7 +6,7 @@ import { TransactionService } from '../services/transaction.service';
 import { ExchangeService } from '../services/exchange.service';
 import { WalletService } from '../services/wallet.service';
 import { whatsappRateLimit } from '../middleware/rateLimit';
-import { prisma } from '../utils/database';
+import { supabase } from '../utils/database';
 
 const router = Router();
 const whatsappService = new WhatsAppService();

@@ -1,4 +1,12 @@
-import { User, KycData, Wallet, Transaction, UserStatus, DocumentType, VerificationStatus, WalletType, TransactionStatus } from '@prisma/client';
+// Re-export database types from our database module
+export { User, KycData, Wallet, Transaction } from '../utils/database';
+
+// Define enums that were previously from Prisma
+export type UserStatus = 'PENDING_KYC' | 'VERIFIED' | 'SUSPENDED';
+export type DocumentType = 'E_KTP' | 'PASSPORT';
+export type VerificationStatus = 'PENDING' | 'VERIFIED' | 'REJECTED';
+export type WalletType = 'GENERATED' | 'IMPORTED';
+export type TransactionStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export interface CreateUserRequest {
   whatsappNumber: string;
@@ -57,15 +65,3 @@ export interface BlockchainTransaction {
   gasUsed: string;
   blockNumber: number;
 }
-
-export {
-  User,
-  KycData,
-  Wallet,
-  Transaction,
-  UserStatus,
-  DocumentType,
-  VerificationStatus,
-  WalletType,
-  TransactionStatus
-};

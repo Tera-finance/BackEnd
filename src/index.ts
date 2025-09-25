@@ -1,13 +1,20 @@
 import app from './app';
 import { config } from './utils/config';
-import { prisma } from './utils/database';
+import { supabase, pgPool } from './utils/database';
 import { redis } from './utils/redis';
 
 async function startServer() {
   try {
     // Test database connection
-    await prisma.$connect();
-    console.log('✅ Connected to PostgreSQL database');
+    try {
+      const { data, error } = await supabase.from('users').select('count').limit(1);
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found" which is ok
+        throw error;
+      }
+      console.log('✅ Connected to Supabase');
+    } catch (error) {
+      console.warn('⚠️  Supabase connection test failed:', error);
+    }
 
     // Test Redis connection
     await redis.ping();
@@ -28,8 +35,8 @@ async function startServer() {
         console.log('HTTP server closed.');
         
         try {
-          await prisma.$disconnect();
-          console.log('Database connection closed.');
+          await pgPool.end();
+          console.log('Database connection pool closed.');
           
           await redis.quit();
           console.log('Redis connection closed.');

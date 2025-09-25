@@ -6,19 +6,16 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch src --exec ts-node src/index.ts",
-    "build": "tsc && npx prisma generate",
+    "build": "tsc",
     "start": "node dist/index.js",
-    "prisma:generate": "npx prisma generate",
-    "prisma:migrate": "npx prisma migrate dev",
-    "prisma:deploy": "npx prisma migrate deploy",
-    "prisma:studio": "npx prisma studio"
+    "db:init": "ts-node src/utils/initDb.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.16.2",
+    "@supabase/supabase-js": "^2.58.0",
     "@vercel/node": "^5.3.24",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",
@@ -35,7 +32,6 @@
     "multer": "^2.0.2",
     "openai": "^5.23.0",
     "pg": "^8.16.3",
-    "prisma": "^6.16.2",
     "redis": "^5.8.2",
     "serverless-http": "^4.0.0",
     "uuid": "^13.0.0"

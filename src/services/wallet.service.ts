@@ -1,8 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import { prisma } from '../utils/database';
+import { supabase, Wallet } from '../utils/database';
 import { BlockchainService } from './blockchain.service';
 import { EncryptionUtil } from '../utils/encryption';
-import { Wallet, WalletType } from '@prisma/client';
+import { WalletType } from '../types';
 
 export class WalletService {
   private blockchainService: BlockchainService;

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiRateLimit } from '../middleware/rateLimit';
-import { prisma } from '../utils/database';
+import { supabase } from '../utils/database';
 
 const router = Router();
 
@@ -14,16 +14,20 @@ router.post('/login', apiRateLimit, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'WhatsApp number is required' });
     }
 
-    const result = await AuthService.loginOrRegister(whatsappNumber, countryCode);
+    const user = await AuthService.loginOrRegister(whatsappNumber, countryCode);
+    const tokens = AuthService.generateTokens(user);
+    
+    // Store refresh token
+    await AuthService.storeRefreshToken(user.id, tokens.refreshToken);
 
     res.json({
       message: 'Login successful',
       user: {
-        id: result.user.id,
-        whatsappNumber: result.user.whatsappNumber,
-        status: result.user.status
+        id: user.id,
+        whatsappNumber: user.whatsapp_number,
+        status: user.status
       },
-      tokens: result.tokens
+      tokens
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -39,7 +43,26 @@ router.post('/refresh', apiRateLimit, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const tokens = await AuthService.refreshToken(refreshToken);
+    // Verify refresh token
+    const decoded = AuthService.verifyRefreshToken(refreshToken);
+    
+    // Validate stored token
+    const isValid = await AuthService.validateRefreshToken(decoded.userId, refreshToken);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
+
+    // Get user
+    const user = await AuthService.getUserById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+
+    // Generate new tokens
+    const tokens = AuthService.generateTokens(user);
+    
+    // Update stored refresh token
+    await AuthService.storeRefreshToken(user.id, tokens.refreshToken);
 
     res.json({
       message: 'Token refreshed successfully',
@@ -57,7 +80,7 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    await AuthService.logout(req.user.id);
+    await AuthService.revokeRefreshToken(req.user.id);
 
     res.json({ message: 'Logout successful' });
   } catch (error) {
@@ -72,20 +95,13 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
-      select: {
-        id: true,
-        whatsappNumber: true,
-        countryCode: true,
-        status: true,
-        kycNftTokenId: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+    const { data: user, error } = await supabase
+      .from('users')
+      .select('id, whatsapp_number, country_code, status, kyc_nft_token_id, created_at, updated_at')
+      .eq('id', req.user.id)
+      .single();
 
-    if (!user) {
+    if (error || !user) {
       return res.status(404).json({ error: 'User not found' });
     }
 

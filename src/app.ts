@@ -6,8 +6,8 @@ import { config } from './utils/config';
 // Import routes
 import authRoutes from './routes/auth.routes';
 import kycRoutes from './routes/kyc.routes';
-import transactionRoutes from './routes/transaction.routes';
-import whatsappRoutes from './routes/whatsapp.routes';
+// import transactionRoutes from './routes/transaction.routes'; // TODO: Fix property naming
+// import whatsappRoutes from './routes/whatsapp.routes'; // TODO: Fix property naming
 
 const app = express();
 
@@ -37,8 +37,8 @@ app.get('/', (req: Request, res: Response) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/kyc', kycRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
+// app.use('/api/transactions', transactionRoutes); // TODO: Fix property naming
+// app.use('/api/whatsapp', whatsappRoutes); // TODO: Fix property naming
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {
