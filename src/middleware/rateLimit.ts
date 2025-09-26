@@ -29,7 +29,7 @@ export const whatsappRateLimit = rateLimit({
 
 export const kycRateLimit = rateLimit({
   windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 3, // 3 KYC submissions per day
+  max: 15, // 3 KYC submissions per day
   message: {
     error: 'Too many KYC submissions, please try again tomorrow'
   }

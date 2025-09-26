@@ -166,6 +166,9 @@ Content-Type: application/json
 ```http
 POST /api/auth/logout
 Authorization: Bearer jwt_token
+Content-Type: application/json
+
+{}
 ```
 
 **Response (200):**
@@ -179,6 +182,8 @@ Authorization: Bearer jwt_token
 ```http
 GET /api/auth/me
 Authorization: Bearer jwt_token
+
+(no body required)
 ```
 
 **Response (200):**
@@ -331,6 +336,76 @@ The system processes WhatsApp messages using regex patterns instead of AI:
 All protected endpoints require JWT token in Authorization header:
 ```
 Authorization: Bearer your_jwt_token
+```
+
+## 📋 cURL Examples (Copy & Paste)
+
+### Authentication
+
+#### 1. Login/Register
+```bash
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "whatsappNumber": "+628123456789",
+    "countryCode": "ID"
+  }'
+```
+
+#### 2. Refresh Token
+```bash
+curl -X POST http://localhost:3000/api/auth/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "refreshToken": "your_refresh_token_here"
+  }'
+```
+
+#### 3. Logout
+```bash
+curl -X POST http://localhost:3000/api/auth/logout \
+  -H "Authorization: Bearer your_access_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+#### 4. Get Current User
+```bash
+curl -X GET http://localhost:3000/api/auth/me \
+  -H "Authorization: Bearer your_access_token_here"
+```
+
+### KYC
+
+#### 1. Submit KYC Documents
+```bash
+curl -X POST http://localhost:3000/api/kyc/submit \
+  -H "Authorization: Bearer your_access_token_here" \
+  -F "documentType=E_KTP" \
+  -F "documentNumber=1234567890123456" \
+  -F "fullName=John Doe" \
+  -F "dateOfBirth=1990-01-01" \
+  -F "address=Jl. Example No. 123, Jakarta" \
+  -F "documentFile=@/path/to/your/document.jpg"
+```
+
+#### 2. Get KYC Status
+```bash
+curl -X GET http://localhost:3000/api/kyc/status \
+  -H "Authorization: Bearer your_access_token_here"
+```
+
+#### 3. Verify KYC (Admin)
+```bash
+curl -X POST http://localhost:3000/api/kyc/verify/kyc_id_here \
+  -H "Authorization: Bearer your_access_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+### Health Check
+```bash
+curl http://localhost:3000/
 ```
 
 ## 📊 Error Responses

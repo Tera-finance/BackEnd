@@ -14,10 +14,31 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024 // 10MB limit
   },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    console.log('Received file field name:', file.fieldname);
+    console.log('File mimetype:', file.mimetype);
+    console.log('File originalname:', file.originalname);
+    
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg', 
+      'image/png',
+      'image/gif',
+      'application/pdf',
+      'application/octet-stream',
+      'text/plain' // Some PDF files are detected as text/plain
+    ];
+    
+    const fileExtension = file.originalname.toLowerCase().split('.').pop();
+    const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
+    
+    const isMimetypeAllowed = allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('image/');
+    const isExtensionAllowed = fileExtension ? allowedExtensions.includes(fileExtension) : false;
+    
+    if (isMimetypeAllowed || isExtensionAllowed) {
       cb(null, true);
     } else {
-      cb(new Error('Only image files are allowed'));
+      console.log('Rejected file with mimetype:', file.mimetype, 'and extension:', fileExtension);
+      cb(new Error(`File type not allowed. Received: ${file.mimetype} (${fileExtension}). Allowed: images and PDF files`));
     }
   }
 });
@@ -25,7 +46,12 @@ const upload = multer({
 router.post('/submit', 
   authenticate, 
   kycRateLimit, 
-  upload.single('document'), 
+  (req: AuthRequest, res: Response, next: any) => {
+    console.log('Request fields:', req.body ? Object.keys(req.body) : 'No body');
+    console.log('Content-Type:', req.headers['content-type']);
+    next();
+  },
+  upload.single('documentFile'), 
   async (req: AuthRequest, res: Response) => {
     try {
       if (!req.user) {
