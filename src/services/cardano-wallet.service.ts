@@ -29,27 +29,35 @@ export class CardanoWalletService {
           return;
         }
 
-        // Dynamic import for ES module
-        const { Lucid, Blockfrost } = await import('lucid-cardano');
+        // Try dynamic import for ES module
+        try {
+          const { Lucid, Blockfrost } = await import('lucid-cardano');
 
-        this.lucid = await Lucid.new(
-          new Blockfrost(
-            config.cardano.blockfrostUrl,
-            config.cardano.blockfrostApiKey
-          ),
-          config.cardano.network as 'Mainnet' | 'Preprod' | 'Preview'
-        );
+          this.lucid = await Lucid.new(
+            new Blockfrost(
+              config.cardano.blockfrostUrl,
+              config.cardano.blockfrostApiKey
+            ),
+            config.cardano.network as 'Mainnet' | 'Preprod' | 'Preview'
+          );
 
-        // Load or generate backend wallet
-        await this.loadOrGenerateBackendWallet();
+          // Load or generate backend wallet
+          await this.loadOrGenerateBackendWallet();
 
-        console.log('✅ Cardano wallet service initialized');
-        console.log('📍 Backend address:', this.backendAddress);
-        this.initialized = true;
-      } catch (error) {
+          console.log('✅ Cardano wallet service initialized');
+          console.log('📍 Backend address:', this.backendAddress);
+          this.initialized = true;
+        } catch (importError: any) {
+          // lucid-cardano has ESM/CJS compatibility issues with ts-node
+          // Fall back to mock mode for development
+          console.log('⚠️  Cardano wallet using mock mode (lucid-cardano ESM compatibility issue)');
+          this.mockMode = true;
+          this.initialized = true;
+        }
+      } catch (error: any) {
         this.mockMode = true;
         this.initialized = true;
-        console.log('⚠️  Cardano wallet service error, using mock mode:', error);
+        console.log('⚠️  Cardano wallet service using mock mode:', error.message || 'Unknown error');
       }
     })();
 

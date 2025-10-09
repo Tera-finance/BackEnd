@@ -9,15 +9,20 @@ let cardanoWalletService: any;
 let cardanoContractService: any;
 
 async function getCardanoServices() {
-  if (!cardanoWalletService) {
-    const walletModule = await import('../services/cardano-wallet.service');
-    cardanoWalletService = walletModule.cardanoWalletService;
+  try {
+    if (!cardanoWalletService) {
+      const walletModule = await import('../services/cardano-wallet.service');
+      cardanoWalletService = walletModule.cardanoWalletService;
+    }
+    if (!cardanoContractService) {
+      const contractModule = await import('../services/cardano-contract.service');
+      cardanoContractService = contractModule.cardanoContractService;
+    }
+    return { cardanoWalletService, cardanoContractService };
+  } catch (error) {
+    console.error('Error loading Cardano services:', error);
+    throw new Error('Cardano services unavailable in current environment');
   }
-  if (!cardanoContractService) {
-    const contractModule = await import('../services/cardano-contract.service');
-    cardanoContractService = contractModule.cardanoContractService;
-  }
-  return { cardanoWalletService, cardanoContractService };
 }
 
 /**
