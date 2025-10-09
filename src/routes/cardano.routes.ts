@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authenticate } from '../middleware/auth';
+import * as cardanoRepo from '../repositories/cardano.repository';
 
 const router = Router();
 
@@ -286,6 +287,154 @@ router.get('/tx-status/:txHash', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to check transaction status'
+    });
+  }
+});
+
+// ==================== TOKEN MANAGEMENT ENDPOINTS ====================
+
+/**
+ * GET /api/cardano/tokens
+ * Get all deployed tokens from the database
+ */
+router.get('/tokens', async (req: Request, res: Response) => {
+  try {
+    const tokens = await cardanoRepo.getAllActiveTokens();
+    
+    res.json({
+      success: true,
+      data: {
+        tokens,
+        count: tokens.length
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching tokens:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch tokens'
+    });
+  }
+});
+
+/**
+ * GET /api/cardano/tokens/:policyId
+ * Get token details by policy ID
+ */
+router.get('/tokens/:policyId', async (req: Request, res: Response) => {
+  try {
+    const { policyId } = req.params;
+    const token = await cardanoRepo.getTokenByPolicyId(policyId);
+    
+    if (!token) {
+      return res.status(404).json({
+        success: false,
+        error: 'Token not found'
+      });
+    }
+
+    // Get statistics
+    const stats = await cardanoRepo.getTokenStats(policyId);
+
+    res.json({
+      success: true,
+      data: {
+        token,
+        stats
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching token:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch token'
+    });
+  }
+});
+
+/**
+ * GET /api/cardano/tokens/symbol/:symbol
+ * Get token by symbol (USDC, EUROC, etc.)
+ */
+router.get('/tokens/symbol/:symbol', async (req: Request, res: Response) => {
+  try {
+    const { symbol } = req.params;
+    const token = await cardanoRepo.getTokenBySymbol(symbol.toUpperCase());
+    
+    if (!token) {
+      return res.status(404).json({
+        success: false,
+        error: 'Token not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: { token }
+    });
+  } catch (error: any) {
+    console.error('Error fetching token:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch token'
+    });
+  }
+});
+
+/**
+ * GET /api/cardano/mints/:policyId
+ * Get mint history for a token
+ */
+router.get('/mints/:policyId', async (req: Request, res: Response) => {
+  try {
+    const { policyId } = req.params;
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    const mints = await cardanoRepo.getMintHistory(policyId, limit);
+
+    res.json({
+      success: true,
+      data: {
+        policyId,
+        mints,
+        count: mints.length
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching mints:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch mint history'
+    });
+  }
+});
+
+/**
+ * GET /api/cardano/swaps
+ * Get swap history
+ */
+router.get('/swaps', async (req: Request, res: Response) => {
+  try {
+    const fromPolicyId = req.query.from as string;
+    const toPolicyId = req.query.to as string;
+    const limit = parseInt(req.query.limit as string) || 10;
+
+    const swaps = fromPolicyId || toPolicyId
+      ? await cardanoRepo.getSwapHistoryByTokens(fromPolicyId, toPolicyId, limit)
+      : await cardanoRepo.getSwapHistory(limit);
+
+    res.json({
+      success: true,
+      data: {
+        swaps,
+        count: swaps.length
+      }
+    });
+  } catch (error: any) {
+    console.error('Error fetching swaps:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch swap history'
     });
   }
 });

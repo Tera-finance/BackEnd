@@ -334,6 +334,411 @@
       ]
     },
     {
+      "name": "Cardano API",
+      "item": [
+        {
+          "name": "Get All Deployed Tokens",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/tokens",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "tokens"]
+            }
+          },
+          "response": [
+            {
+              "name": "All Tokens Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/tokens",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "tokens"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tokens\": [\n      {\n        \"id\": 1,\n        \"token_name\": \"mockUSDC\",\n        \"token_symbol\": \"USDC\",\n        \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n        \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n        \"decimals\": 6,\n        \"total_supply\": \"0\",\n        \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n        \"cardano_network\": \"Preprod\",\n        \"is_active\": true,\n        \"deployed_at\": \"2025-10-09T08:30:00.000Z\"\n      }\n    ],\n    \"count\": 6\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Token by Policy ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/tokens/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "tokens", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"]
+            }
+          },
+          "response": [
+            {
+              "name": "Token Details Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/tokens/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "tokens", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"token\": {\n      \"id\": 1,\n      \"token_name\": \"mockUSDC\",\n      \"token_symbol\": \"USDC\",\n      \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n      \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n      \"decimals\": 6,\n      \"total_supply\": \"1000000000000\",\n      \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n      \"cardano_network\": \"Preprod\",\n      \"description\": \"USDC stablecoin on Cardano Preprod\",\n      \"is_active\": true,\n      \"deployed_at\": \"2025-10-09T08:07:33.000Z\"\n    },\n    \"stats\": {\n      \"totalMints\": 5,\n      \"totalMintedAmount\": \"1000000000000\",\n      \"totalSwaps\": 12,\n      \"lastActivity\": \"2025-10-09T10:30:00.000Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Token by Symbol",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/tokens/symbol/USDC",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "tokens", "symbol", "USDC"]
+            }
+          },
+          "response": [
+            {
+              "name": "Token by Symbol Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/tokens/symbol/USDC",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "tokens", "symbol", "USDC"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"token\": {\n      \"id\": 1,\n      \"token_name\": \"mockUSDC\",\n      \"token_symbol\": \"USDC\",\n      \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n      \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n      \"decimals\": 6,\n      \"total_supply\": \"1000000000000\",\n      \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n      \"cardano_network\": \"Preprod\",\n      \"is_active\": true,\n      \"deployed_at\": \"2025-10-09T08:07:33.000Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Mint History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/mints/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "mints", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Mint History Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/mints/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d?limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "mints", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n    \"mints\": [\n      {\n        \"id\": 1,\n        \"token_id\": 1,\n        \"amount\": \"100000000\",\n        \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"tx_hash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"redeemer_data\": null,\n        \"created_at\": \"2025-10-09T09:30:00.000Z\"\n      },\n      {\n        \"id\": 2,\n        \"token_id\": 1,\n        \"amount\": \"50000000\",\n        \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"tx_hash\": \"a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890\",\n        \"redeemer_data\": null,\n        \"created_at\": \"2025-10-09T10:15:00.000Z\"\n      }\n    ],\n    \"count\": 2\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Swaps",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/swaps?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "swaps"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "All Swaps Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/swaps?limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "swaps"],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swaps\": [\n      {\n        \"id\": 1,\n        \"from_token_id\": 1,\n        \"to_token_id\": 4,\n        \"from_amount\": \"100000000\",\n        \"to_amount\": \"1562960000\",\n        \"exchange_rate\": 15629.60,\n        \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n        \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"swap_type\": \"DIRECT\",\n        \"hub_token_id\": null,\n        \"created_at\": \"2025-10-09T10:30:00.000Z\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Swaps by Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/swaps?from=4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d&to=5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "swaps"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
+                  "description": "USDC Policy ID"
+                },
+                {
+                  "key": "to",
+                  "value": "5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9",
+                  "description": "IDRX Policy ID"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Filtered Swaps Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/swaps?from=4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d&to=5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9&limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "swaps"],
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"
+                    },
+                    {
+                      "key": "to",
+                      "value": "5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swaps\": [\n      {\n        \"id\": 1,\n        \"from_token_id\": 1,\n        \"to_token_id\": 4,\n        \"from_amount\": \"100000000\",\n        \"to_amount\": \"1562960000\",\n        \"exchange_rate\": 15629.60,\n        \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n        \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"swap_type\": \"DIRECT\",\n        \"hub_token_id\": null,\n        \"created_at\": \"2025-10-09T10:30:00.000Z\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Backend Wallet Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/backend-info",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "backend-info"]
+            }
+          },
+          "response": [
+            {
+              "name": "Backend Info Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/backend-info",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "backend-info"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n    \"publicKeyHash\": \"e1f4b11c66f9cd8707706f0e87d8f9e77c707c1d9c7d1f670f0b30c7\",\n    \"balance\": {\n      \"ada\": 1500.5,\n      \"lovelace\": \"1500500000\",\n      \"assets\": [\n        {\n          \"unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n          \"quantity\": \"5000000000\"\n        },\n        {\n          \"unit\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9.IDRX\",\n          \"quantity\": \"75000000000\"\n        }\n      ]\n    },\n    \"isReady\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Script UTxOs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/script-utxos/addr_test1...",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "script-utxos", "addr_test1..."]
+            }
+          },
+          "response": [
+            {
+              "name": "Script UTxOs Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/script-utxos/addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "script-utxos", "addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht\",\n    \"utxos\": [\n      {\n        \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"outputIndex\": 0,\n        \"amount\": [\n          {\n            \"unit\": \"lovelace\",\n            \"quantity\": \"2000000\"\n          },\n          {\n            \"unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n            \"quantity\": \"100000000\"\n          }\n        ],\n        \"datum\": \"d8799fd8799f581ce1f4b11c66f9cd8707706f0e87d8f9e77c707c1d9c7d1f670f0b30c7ff1a000f4240ff\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Check Transaction Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/tx-status/c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "tx-status", "c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a"]
+            }
+          },
+          "response": [
+            {
+              "name": "Transaction Confirmed",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/tx-status/c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "tx-status", "c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactionHash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n    \"confirmed\": true\n  }\n}"
+            },
+            {
+              "name": "Transaction Pending",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/tx-status/abc123def456...",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "tx-status", "abc123def456..."]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactionHash\": \"abc123def456...\",\n    \"confirmed\": false\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Health Check",
       "request": {
         "method": "GET",

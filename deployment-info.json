@@ -1,0 +1,63 @@
+{
+  "timestamp": "2025-10-09T09:45:59.317Z",
+  "network": "Preprod",
+  "walletAddress": "addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82",
+  "tokens": [
+    {
+      "name": "mockADA",
+      "policyId": "1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93",
+      "txHash": "a3defa7feb9c36b7b8fb05a5c9d55e6eed2fa5db6886109acb3fa35567a55e24",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/a3defa7feb9c36b7b8fb05a5c9d55e6eed2fa5db6886109acb3fa35567a55e24",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93"
+    },
+    {
+      "name": "mockUSDC",
+      "policyId": "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
+      "txHash": "7bf267cbef09f5f80fb7d9e588f5af0af3307b108312c764f2e5367c5e074f92",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/7bf267cbef09f5f80fb7d9e588f5af0af3307b108312c764f2e5367c5e074f92",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"
+    },
+    {
+      "name": "mockCNHT",
+      "policyId": "c7bdad55621e968c6ccb0967493808c9ab50601b3b9aec77b2ba6888",
+      "txHash": "8e4d120670815bbbe198f90ea2babbb6717cb3038715b138a102d24bb07849f8",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/8e4d120670815bbbe198f90ea2babbb6717cb3038715b138a102d24bb07849f8",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/c7bdad55621e968c6ccb0967493808c9ab50601b3b9aec77b2ba6888"
+    },
+    {
+      "name": "mockEUROC",
+      "policyId": "f766f151787a989166869375f4c57cfa36c533241033c8000a5481c1",
+      "txHash": "8afb1b104fa6ad4539b8307a3c67e7263f06100fd83ee203bf69cb942a9a8dd1",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/8afb1b104fa6ad4539b8307a3c67e7263f06100fd83ee203bf69cb942a9a8dd1",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/f766f151787a989166869375f4c57cfa36c533241033c8000a5481c1"
+    },
+    {
+      "name": "mockIDRX",
+      "policyId": "5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9",
+      "txHash": "1fa3b2d0339558253e7d21f53c3138496bce8957f83b4747778fc890509bd6ef",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/1fa3b2d0339558253e7d21f53c3138496bce8957f83b4747778fc890509bd6ef",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9"
+    },
+    {
+      "name": "mockJPYC",
+      "policyId": "7725300e8d414e0fccad0a562e3a9c585970e84e7e92d422111e1e29",
+      "txHash": "0e083b140f907076f17984148c303cfbfb96a1cfd2cc17a62bb1c52c9111d593",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/0e083b140f907076f17984148c303cfbfb96a1cfd2cc17a62bb1c52c9111d593",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/7725300e8d414e0fccad0a562e3a9c585970e84e7e92d422111e1e29"
+    },
+    {
+      "name": "mockMXNT",
+      "policyId": "c73682653bd1ff615e54a3d79c00068e1f4977a7a9628f39add50dc3",
+      "txHash": "9fba05fc1006b7aad0e6bd02714845d5403ff0a698dfaa605d4d95a710cb97ee",
+      "success": true,
+      "cardanoscanUrl": "https://preprod.cardanoscan.io/transaction/9fba05fc1006b7aad0e6bd02714845d5403ff0a698dfaa605d4d95a710cb97ee",
+      "policyUrl": "https://preprod.cardanoscan.io/tokenPolicy/c73682653bd1ff615e54a3d79c00068e1f4977a7a9628f39add50dc3"
+    }
+  ]
+}
