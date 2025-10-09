@@ -10,7 +10,8 @@
     "start": "node dist/index.js",
     "db:init": "ts-node src/utils/initDb.ts",
     "wallet:generate": "node scripts/generate-cardano-wallet.js",
-    "wallet:import": "ts-node scripts/import-wallet.ts"
+    "wallet:import": "ts-node scripts/import-wallet.ts",
+    "import:deployment": "ts-node scripts/import-deployment.ts"
   },
   "keywords": [],
   "author": "",

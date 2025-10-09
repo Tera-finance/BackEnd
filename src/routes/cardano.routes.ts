@@ -7,6 +7,7 @@ const router = Router();
 // Lazy load Cardano services to avoid import errors in dev mode
 let cardanoWalletService: any;
 let cardanoContractService: any;
+let cardanoActionsService: any;
 
 async function getCardanoServices() {
   try {
@@ -18,7 +19,11 @@ async function getCardanoServices() {
       const contractModule = await import('../services/cardano-contract.service');
       cardanoContractService = contractModule.cardanoContractService;
     }
-    return { cardanoWalletService, cardanoContractService };
+    if (!cardanoActionsService) {
+      const actionsModule = await import('../services/cardano-actions.service');
+      cardanoActionsService = actionsModule.cardanoActionsService;
+    }
+    return { cardanoWalletService, cardanoContractService, cardanoActionsService };
   } catch (error) {
     console.error('Error loading Cardano services:', error);
     throw new Error('Cardano services unavailable in current environment');
@@ -533,6 +538,112 @@ router.post('/swaps', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to save swap transaction'
+    });
+  }
+});
+
+/**
+ * POST /api/cardano/actions/mint
+ * Execute mint action on Cardano blockchain
+ * This will actually mint tokens using smart contracts
+ */
+router.post('/actions/mint', async (req: Request, res: Response) => {
+  try {
+    const { symbol, amount, recipientAddress } = req.body;
+
+    if (!symbol || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: symbol, amount'
+      });
+    }
+
+    const { cardanoActionsService } = await getCardanoServices();
+    
+    console.log(`🪙 Initiating mint: ${amount} ${symbol}`);
+    const result = await cardanoActionsService.mintToken({
+      symbol,
+      amount,
+      recipientAddress
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Mint action failed'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        txHash: result.txHash,
+        policyId: result.policyId,
+        amount: result.amount,
+        cardanoscanUrl: result.cardanoscanUrl
+      },
+      message: `Successfully minted ${amount} ${symbol}`
+    });
+  } catch (error: any) {
+    console.error('Error in mint action:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Mint action failed'
+    });
+  }
+});
+
+/**
+ * POST /api/cardano/actions/swap
+ * Execute swap action on Cardano blockchain
+ * This will burn one token and mint another
+ */
+router.post('/actions/swap', async (req: Request, res: Response) => {
+  try {
+    const { fromSymbol, toSymbol, fromAmount, exchangeRate } = req.body;
+
+    if (!fromSymbol || !toSymbol || !fromAmount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: fromSymbol, toSymbol, fromAmount'
+      });
+    }
+
+    const { cardanoActionsService } = await getCardanoServices();
+    
+    console.log(`🔄 Initiating swap: ${fromAmount} ${fromSymbol} → ${toSymbol}`);
+    const result = await cardanoActionsService.swapTokens({
+      fromSymbol,
+      toSymbol,
+      fromAmount,
+      exchangeRate
+    });
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        error: result.error || 'Swap action failed'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        burnTxHash: result.burnTxHash,
+        mintTxHash: result.mintTxHash,
+        fromPolicyId: result.fromPolicyId,
+        toPolicyId: result.toPolicyId,
+        fromAmount: result.fromAmount,
+        toAmount: result.toAmount,
+        exchangeRate: result.exchangeRate
+      },
+      message: `Successfully swapped ${fromAmount} ${fromSymbol} to ${result.toAmount} ${toSymbol}`
+    });
+  } catch (error: any) {
+    console.error('Error in swap action:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Swap action failed'
     });
   }
 });

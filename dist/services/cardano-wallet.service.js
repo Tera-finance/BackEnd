@@ -55,19 +55,28 @@ class CardanoWalletService {
                     this.initialized = true;
                     return;
                 }
-                // Dynamic import for ES module
-                const { Lucid, Blockfrost } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
-                this.lucid = await Lucid.new(new Blockfrost(config_1.config.cardano.blockfrostUrl, config_1.config.cardano.blockfrostApiKey), config_1.config.cardano.network);
-                // Load or generate backend wallet
-                await this.loadOrGenerateBackendWallet();
-                console.log('✅ Cardano wallet service initialized');
-                console.log('📍 Backend address:', this.backendAddress);
-                this.initialized = true;
+                // Try dynamic import for ES module
+                try {
+                    const { Lucid, Blockfrost } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
+                    this.lucid = await Lucid.new(new Blockfrost(config_1.config.cardano.blockfrostUrl, config_1.config.cardano.blockfrostApiKey), config_1.config.cardano.network);
+                    // Load or generate backend wallet
+                    await this.loadOrGenerateBackendWallet();
+                    console.log('✅ Cardano wallet service initialized');
+                    console.log('📍 Backend address:', this.backendAddress);
+                    this.initialized = true;
+                }
+                catch (importError) {
+                    // lucid-cardano has ESM/CJS compatibility issues with ts-node
+                    // Fall back to mock mode for development
+                    console.log('⚠️  Cardano wallet using mock mode (lucid-cardano ESM compatibility issue)');
+                    this.mockMode = true;
+                    this.initialized = true;
+                }
             }
             catch (error) {
                 this.mockMode = true;
                 this.initialized = true;
-                console.log('⚠️  Cardano wallet service error, using mock mode:', error);
+                console.log('⚠️  Cardano wallet service using mock mode:', error.message || 'Unknown error');
             }
         })();
         return this.initPromise;

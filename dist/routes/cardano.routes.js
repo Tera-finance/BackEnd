@@ -35,20 +35,32 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const auth_1 = require("../middleware/auth");
+const cardanoRepo = __importStar(require("../repositories/cardano.repository"));
 const router = (0, express_1.Router)();
 // Lazy load Cardano services to avoid import errors in dev mode
 let cardanoWalletService;
 let cardanoContractService;
+let cardanoActionsService;
 async function getCardanoServices() {
-    if (!cardanoWalletService) {
-        const walletModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-wallet.service')));
-        cardanoWalletService = walletModule.cardanoWalletService;
+    try {
+        if (!cardanoWalletService) {
+            const walletModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-wallet.service')));
+            cardanoWalletService = walletModule.cardanoWalletService;
+        }
+        if (!cardanoContractService) {
+            const contractModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-contract.service')));
+            cardanoContractService = contractModule.cardanoContractService;
+        }
+        if (!cardanoActionsService) {
+            const actionsModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-actions.service')));
+            cardanoActionsService = actionsModule.cardanoActionsService;
+        }
+        return { cardanoWalletService, cardanoContractService, cardanoActionsService };
     }
-    if (!cardanoContractService) {
-        const contractModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-contract.service')));
-        cardanoContractService = contractModule.cardanoContractService;
+    catch (error) {
+        console.error('Error loading Cardano services:', error);
+        throw new Error('Cardano services unavailable in current environment');
     }
-    return { cardanoWalletService, cardanoContractService };
 }
 /**
  * GET /api/cardano/backend-info
@@ -285,6 +297,315 @@ router.get('/tx-status/:txHash', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message || 'Failed to check transaction status'
+        });
+    }
+});
+// ==================== TOKEN MANAGEMENT ENDPOINTS ====================
+/**
+ * GET /api/cardano/tokens
+ * Get all deployed tokens from the database
+ */
+router.get('/tokens', async (req, res) => {
+    try {
+        const tokens = await cardanoRepo.getAllActiveTokens();
+        res.json({
+            success: true,
+            data: {
+                tokens,
+                count: tokens.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching tokens:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch tokens'
+        });
+    }
+});
+/**
+ * GET /api/cardano/tokens/:policyId
+ * Get token details by policy ID
+ */
+router.get('/tokens/:policyId', async (req, res) => {
+    try {
+        const { policyId } = req.params;
+        const token = await cardanoRepo.getTokenByPolicyId(policyId);
+        if (!token) {
+            return res.status(404).json({
+                success: false,
+                error: 'Token not found'
+            });
+        }
+        // Get statistics
+        const stats = await cardanoRepo.getTokenStats(policyId);
+        res.json({
+            success: true,
+            data: {
+                token,
+                stats
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching token:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch token'
+        });
+    }
+});
+/**
+ * GET /api/cardano/tokens/symbol/:symbol
+ * Get token by symbol (USDC, EUROC, etc.)
+ */
+router.get('/tokens/symbol/:symbol', async (req, res) => {
+    try {
+        const { symbol } = req.params;
+        const token = await cardanoRepo.getTokenBySymbol(symbol.toUpperCase());
+        if (!token) {
+            return res.status(404).json({
+                success: false,
+                error: 'Token not found'
+            });
+        }
+        res.json({
+            success: true,
+            data: { token }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching token:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch token'
+        });
+    }
+});
+/**
+ * GET /api/cardano/mints/:policyId
+ * Get mint history for a token
+ */
+router.get('/mints/:policyId', async (req, res) => {
+    try {
+        const { policyId } = req.params;
+        const limit = parseInt(req.query.limit) || 10;
+        const mints = await cardanoRepo.getMintHistory(policyId, limit);
+        res.json({
+            success: true,
+            data: {
+                policyId,
+                mints,
+                count: mints.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching mints:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch mint history'
+        });
+    }
+});
+/**
+ * POST /api/cardano/mints
+ * Save a new mint transaction
+ * Called from be-offchain after minting tokens
+ */
+router.post('/mints', async (req, res) => {
+    try {
+        const { policyId, amount, recipientAddress, txHash, redeemerData } = req.body;
+        if (!policyId || !amount || !recipientAddress || !txHash) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: policyId, amount, recipientAddress, txHash'
+            });
+        }
+        const mint = await cardanoRepo.saveMintTransaction({
+            policyId,
+            amount: BigInt(amount),
+            recipientAddress,
+            txHash,
+            redeemerData
+        });
+        res.status(201).json({
+            success: true,
+            data: { mint },
+            message: 'Mint transaction saved successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error saving mint:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to save mint transaction'
+        });
+    }
+});
+/**
+ * GET /api/cardano/swaps
+ * Get swap history
+ */
+router.get('/swaps', async (req, res) => {
+    try {
+        const fromPolicyId = req.query.from;
+        const toPolicyId = req.query.to;
+        const limit = parseInt(req.query.limit) || 10;
+        const swaps = fromPolicyId || toPolicyId
+            ? await cardanoRepo.getSwapHistoryByTokens(fromPolicyId, toPolicyId, limit)
+            : await cardanoRepo.getSwapHistory(limit);
+        res.json({
+            success: true,
+            data: {
+                swaps,
+                count: swaps.length
+            }
+        });
+    }
+    catch (error) {
+        console.error('Error fetching swaps:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to fetch swap history'
+        });
+    }
+});
+/**
+ * POST /api/cardano/swaps
+ * Save a new swap transaction
+ * Called from be-offchain after swapping tokens
+ */
+router.post('/swaps', async (req, res) => {
+    try {
+        const { fromPolicyId, toPolicyId, fromAmount, toAmount, exchangeRate, senderAddress, recipientAddress, txHash, swapType, hubPolicyId } = req.body;
+        if (!fromPolicyId || !toPolicyId || !fromAmount || !toAmount || !exchangeRate ||
+            !senderAddress || !recipientAddress || !txHash || !swapType) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: fromPolicyId, toPolicyId, fromAmount, toAmount, exchangeRate, senderAddress, recipientAddress, txHash, swapType'
+            });
+        }
+        const swap = await cardanoRepo.saveSwapTransaction({
+            fromPolicyId,
+            toPolicyId,
+            fromAmount: BigInt(fromAmount),
+            toAmount: BigInt(toAmount),
+            exchangeRate: parseFloat(exchangeRate),
+            senderAddress,
+            recipientAddress,
+            txHash,
+            swapType: swapType,
+            hubPolicyId
+        });
+        res.status(201).json({
+            success: true,
+            data: { swap },
+            message: 'Swap transaction saved successfully'
+        });
+    }
+    catch (error) {
+        console.error('Error saving swap:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to save swap transaction'
+        });
+    }
+});
+/**
+ * POST /api/cardano/actions/mint
+ * Execute mint action on Cardano blockchain
+ * This will actually mint tokens using smart contracts
+ */
+router.post('/actions/mint', async (req, res) => {
+    try {
+        const { symbol, amount, recipientAddress } = req.body;
+        if (!symbol || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: symbol, amount'
+            });
+        }
+        const { cardanoActionsService } = await getCardanoServices();
+        console.log(`🪙 Initiating mint: ${amount} ${symbol}`);
+        const result = await cardanoActionsService.mintToken({
+            symbol,
+            amount,
+            recipientAddress
+        });
+        if (!result.success) {
+            return res.status(500).json({
+                success: false,
+                error: result.error || 'Mint action failed'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: {
+                txHash: result.txHash,
+                policyId: result.policyId,
+                amount: result.amount,
+                cardanoscanUrl: result.cardanoscanUrl
+            },
+            message: `Successfully minted ${amount} ${symbol}`
+        });
+    }
+    catch (error) {
+        console.error('Error in mint action:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Mint action failed'
+        });
+    }
+});
+/**
+ * POST /api/cardano/actions/swap
+ * Execute swap action on Cardano blockchain
+ * This will burn one token and mint another
+ */
+router.post('/actions/swap', async (req, res) => {
+    try {
+        const { fromSymbol, toSymbol, fromAmount, exchangeRate } = req.body;
+        if (!fromSymbol || !toSymbol || !fromAmount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required fields: fromSymbol, toSymbol, fromAmount'
+            });
+        }
+        const { cardanoActionsService } = await getCardanoServices();
+        console.log(`🔄 Initiating swap: ${fromAmount} ${fromSymbol} → ${toSymbol}`);
+        const result = await cardanoActionsService.swapTokens({
+            fromSymbol,
+            toSymbol,
+            fromAmount,
+            exchangeRate
+        });
+        if (!result.success) {
+            return res.status(500).json({
+                success: false,
+                error: result.error || 'Swap action failed'
+            });
+        }
+        res.status(200).json({
+            success: true,
+            data: {
+                burnTxHash: result.burnTxHash,
+                mintTxHash: result.mintTxHash,
+                fromPolicyId: result.fromPolicyId,
+                toPolicyId: result.toPolicyId,
+                fromAmount: result.fromAmount,
+                toAmount: result.toAmount,
+                exchangeRate: result.exchangeRate
+            },
+            message: `Successfully swapped ${fromAmount} ${fromSymbol} to ${result.toAmount} ${toSymbol}`
+        });
+    }
+    catch (error) {
+        console.error('Error in swap action:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Swap action failed'
         });
     }
 });

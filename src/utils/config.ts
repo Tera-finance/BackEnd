@@ -32,7 +32,8 @@ export const config = {
   cardano: {
     network: process.env.CARDANO_NETWORK || 'Preprod',
     blockfrostApiKey: process.env.BLOCKFROST_API_KEY || '',
-    blockfrostUrl: process.env.BLOCKFROST_URL || 'https://cardano-preprod.blockfrost.io/api/v0'
+    blockfrostUrl: process.env.BLOCKFROST_URL || 'https://cardano-preprod.blockfrost.io/api/v0',
+    walletSeed: process.env.WALLET_SEED || ''
   },
   
   // Exchange Rates API (for fiat conversions)
