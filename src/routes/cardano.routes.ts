@@ -415,6 +415,44 @@ router.get('/mints/:policyId', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/cardano/mints
+ * Save a new mint transaction
+ * Called from be-offchain after minting tokens
+ */
+router.post('/mints', async (req: Request, res: Response) => {
+  try {
+    const { policyId, amount, recipientAddress, txHash, redeemerData } = req.body;
+
+    if (!policyId || !amount || !recipientAddress || !txHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: policyId, amount, recipientAddress, txHash'
+      });
+    }
+
+    const mint = await cardanoRepo.saveMintTransaction({
+      policyId,
+      amount: BigInt(amount),
+      recipientAddress,
+      txHash,
+      redeemerData
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { mint },
+      message: 'Mint transaction saved successfully'
+    });
+  } catch (error: any) {
+    console.error('Error saving mint:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save mint transaction'
+    });
+  }
+});
+
+/**
  * GET /api/cardano/swaps
  * Get swap history
  */
@@ -440,6 +478,61 @@ router.get('/swaps', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch swap history'
+    });
+  }
+});
+
+/**
+ * POST /api/cardano/swaps
+ * Save a new swap transaction
+ * Called from be-offchain after swapping tokens
+ */
+router.post('/swaps', async (req: Request, res: Response) => {
+  try {
+    const {
+      fromPolicyId,
+      toPolicyId,
+      fromAmount,
+      toAmount,
+      exchangeRate,
+      senderAddress,
+      recipientAddress,
+      txHash,
+      swapType,
+      hubPolicyId
+    } = req.body;
+
+    if (!fromPolicyId || !toPolicyId || !fromAmount || !toAmount || !exchangeRate || 
+        !senderAddress || !recipientAddress || !txHash || !swapType) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: fromPolicyId, toPolicyId, fromAmount, toAmount, exchangeRate, senderAddress, recipientAddress, txHash, swapType'
+      });
+    }
+
+    const swap = await cardanoRepo.saveSwapTransaction({
+      fromPolicyId,
+      toPolicyId,
+      fromAmount: BigInt(fromAmount),
+      toAmount: BigInt(toAmount),
+      exchangeRate: parseFloat(exchangeRate),
+      senderAddress,
+      recipientAddress,
+      txHash,
+      swapType: swapType as 'DIRECT' | 'VIA_HUB',
+      hubPolicyId
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { swap },
+      message: 'Swap transaction saved successfully'
+    });
+  } catch (error: any) {
+    console.error('Error saving swap:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to save swap transaction'
     });
   }
 });

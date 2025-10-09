@@ -445,6 +445,60 @@
           ]
         },
         {
+          "name": "Save Mint Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"amount\": \"100000000\",\n  \"recipientAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n  \"redeemerData\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/mints",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "mints"]
+            }
+          },
+          "response": [
+            {
+              "name": "Mint Saved Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"amount\": \"100000000\",\n  \"recipientAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/mints",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "mints"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"mint\": {\n      \"id\": 1,\n      \"token_id\": 1,\n      \"amount\": \"100000000\",\n      \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n      \"tx_hash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"redeemer_data\": null,\n      \"created_at\": \"2025-10-09T10:30:00.000Z\"\n    }\n  },\n  \"message\": \"Mint transaction saved successfully\"\n}"
+            }
+          ]
+        },
+        {
           "name": "Get Mint History",
           "request": {
             "method": "GET",
@@ -603,6 +657,60 @@
                 }
               ],
               "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swaps\": [\n      {\n        \"id\": 1,\n        \"from_token_id\": 1,\n        \"to_token_id\": 4,\n        \"from_amount\": \"100000000\",\n        \"to_amount\": \"1562960000\",\n        \"exchange_rate\": 15629.60,\n        \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n        \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"swap_type\": \"DIRECT\",\n        \"hub_token_id\": null,\n        \"created_at\": \"2025-10-09T10:30:00.000Z\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Save Swap Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromPolicyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"toPolicyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\",\n  \"fromAmount\": \"100000000\",\n  \"toAmount\": \"1562960000\",\n  \"exchangeRate\": 15629.60,\n  \"senderAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"recipientAddress\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n  \"txHash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n  \"swapType\": \"DIRECT\",\n  \"hubPolicyId\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cardano/swaps",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "cardano", "swaps"]
+            }
+          },
+          "response": [
+            {
+              "name": "Swap Saved Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"fromPolicyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"toPolicyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\",\n  \"fromAmount\": \"100000000\",\n  \"toAmount\": \"1562960000\",\n  \"exchangeRate\": 15629.60,\n  \"senderAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"recipientAddress\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n  \"txHash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n  \"swapType\": \"DIRECT\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/cardano/swaps",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cardano", "swaps"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swap\": {\n      \"id\": 1,\n      \"from_token_id\": 1,\n      \"to_token_id\": 4,\n      \"from_amount\": \"100000000\",\n      \"to_amount\": \"1562960000\",\n      \"exchange_rate\": 15629.60,\n      \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n      \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n      \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n      \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n      \"swap_type\": \"DIRECT\",\n      \"hub_token_id\": null,\n      \"created_at\": \"2025-10-09T10:30:00.000Z\"\n    }\n  },\n  \"message\": \"Swap transaction saved successfully\"\n}"
             }
           ]
         },
