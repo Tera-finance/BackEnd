@@ -32,7 +32,30 @@
               "path": ["api", "exchange", "currencies"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "All Currencies Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/exchange/currencies",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "exchange", "currencies"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"currencies\": [\n      {\n        \"code\": \"USD\",\n        \"name\": \"US Dollar\",\n        \"symbol\": \"$\",\n        \"mockToken\": \"mockUSDC\",\n        \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\"\n      },\n      {\n        \"code\": \"IDR\",\n        \"name\": \"Indonesian Rupiah\",\n        \"symbol\": \"Rp\",\n        \"mockToken\": \"mockIDRX\",\n        \"policyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n      },\n      {\n        \"code\": \"EUR\",\n        \"name\": \"Euro\",\n        \"symbol\": \"€\",\n        \"mockToken\": \"mockEUROC\",\n        \"policyId\": \"f766f151787a989166869375f4c57cfa36c533241033c8000a5481c1\"\n      },\n      {\n        \"code\": \"CNY\",\n        \"name\": \"Chinese Yuan\",\n        \"symbol\": \"¥\",\n        \"mockToken\": \"mockCNHT\",\n        \"policyId\": \"c7bdad55621e968c6ccb0967493808c9ab50601b3b9aec77b2ba6888\"\n      },\n      {\n        \"code\": \"JPY\",\n        \"name\": \"Japanese Yen\",\n        \"symbol\": \"¥\",\n        \"mockToken\": \"mockJPYC\",\n        \"policyId\": \"7725300e8d414e0fccad0a562e3a9c585970e84e7e92d422111e1e29\"\n      },\n      {\n        \"code\": \"MXN\",\n        \"name\": \"Mexican Peso\",\n        \"symbol\": \"$\",\n        \"mockToken\": \"mockMXNT\",\n        \"policyId\": \"c73682653bd1ff615e54a3d79c00068e1f4977a7a9628f39add50dc3\"\n      }\n    ]\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Exchange Rate",
@@ -55,7 +78,40 @@
               ]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Exchange Rate Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/exchange/rate?from=USD&to=IDR",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "exchange", "rate"],
+                  "query": [
+                    {
+                      "key": "from",
+                      "value": "USD"
+                    },
+                    {
+                      "key": "to",
+                      "value": "IDR"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"from\": \"USD\",\n    \"to\": \"IDR\",\n    \"rate\": 15629.60,\n    \"lastUpdated\": \"2025-10-09T10:00:00.000Z\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Conversion Path",
@@ -192,7 +248,39 @@
               "path": ["api", "transfer", "initiate"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Transfer Initiated Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"paymentMethod\": \"MASTERCARD\",\n  \"senderCurrency\": \"USD\",\n  \"senderAmount\": 100,\n  \"recipientName\": \"John Doe\",\n  \"recipientCurrency\": \"IDR\",\n  \"recipientBank\": \"Bank BNI\",\n  \"recipientAccount\": \"1234567890\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/transfer/initiate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "transfer", "initiate"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"INITIATED\",\n    \"paymentMethod\": \"MASTERCARD\",\n    \"sender\": {\n      \"currency\": \"USD\",\n      \"amount\": 100,\n      \"totalCharged\": 101.5\n    },\n    \"recipient\": {\n      \"name\": \"John Doe\",\n      \"currency\": \"IDR\",\n      \"amount\": 1562960,\n      \"bank\": \"Bank BNI\",\n      \"account\": \"1234567890\"\n    },\n    \"blockchain\": {\n      \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n      \"hubToken\": \"mockADA\",\n      \"recipientToken\": \"mockIDRX\"\n    },\n    \"fees\": {\n      \"percentage\": 1.5,\n      \"amount\": 1.5\n    },\n    \"createdAt\": \"2025-10-09T10:30:00.000Z\"\n  },\n  \"message\": \"Transfer initiated successfully. Please complete payment.\"\n}"
+            }
+          ]
         },
         {
           "name": "Confirm Transfer",
@@ -214,7 +302,39 @@
               "path": ["api", "transfer", "confirm"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Transfer Confirmed Successfully",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"transferId\": \"TXN-20251009-ABC123\",\n  \"paymentProof\": \"payment_123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/transfer/confirm",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "transfer", "confirm"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"PAYMENT_CONFIRMED\",\n    \"blockchain\": {\n      \"mintTxHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\"\n    },\n    \"updatedAt\": \"2025-10-09T10:31:00.000Z\"\n  },\n  \"message\": \"Payment confirmed. Processing blockchain transactions...\"\n}"
+            }
+          ]
         },
         {
           "name": "Get Transfer Status",
@@ -227,7 +347,30 @@
               "path": ["api", "transfer", "status", "TXN-20251009-ABC123"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Transfer Status Response",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/transfer/status/TXN-20251009-ABC123",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "transfer", "status", "TXN-20251009-ABC123"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"COMPLETED\",\n    \"currentStep\": \"BANK_PAYOUT_COMPLETED\",\n    \"progress\": 100,\n    \"estimatedCompletion\": \"2025-10-09T10:50:00.000Z\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Transfer Details",
@@ -857,7 +1000,30 @@
           "path": ["health"]
         }
       },
-      "response": []
+      "response": [
+        {
+          "name": "Health Check Response",
+          "originalRequest": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2025-10-09T10:30:00.000Z\",\n  \"uptime\": 3600,\n  \"services\": {\n    \"database\": \"connected\",\n    \"redis\": \"connected\",\n    \"cardano\": \"ready\"\n  }\n}"
+        }
+      ]
     }
   ]
 }

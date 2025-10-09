@@ -1,10 +1,12 @@
 import { Router } from 'express';
 import { exchangeRateService } from '../services/exchange-rate-api.service';
-import { 
-  hasMockToken, 
+import {
+  hasMockToken,
   getMockToken,
   getPolicyId,
 } from '../config/currencies.config';
+import { TransferRepository } from '../repositories/transfer.repository';
+import { authenticate, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -62,42 +64,83 @@ router.post('/initiate', async (req, res) => {
     // Create transfer record (save to database)
     const transferId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    const transferData = {
+    // Get user info from auth header if available
+    let userId = null;
+    let whatsappNumber = req.body.whatsappNumber || 'unknown';
+
+    // Extract user from auth token if authenticated
+    const authReq = req as any;
+    if (authReq.user) {
+      userId = authReq.user.id;
+      whatsappNumber = authReq.user.whatsapp_number || whatsappNumber;
+    }
+
+    // Generate payment link for WALLET method
+    const paymentLink = paymentMethod === 'WALLET'
+      ? `https://payment.trustbridge.io/${transferId}`
+      : undefined;
+
+    // Save transfer to database
+    const transfer = await TransferRepository.create({
       id: transferId,
-      status: 'pending',
-      paymentMethod,
+      user_id: userId,
+      whatsapp_number: whatsappNumber,
+      payment_method: paymentMethod,
+      sender_currency: senderCurrency,
+      sender_amount: parseFloat(senderAmount),
+      total_amount: totalAmount,
+      recipient_name: recipientName,
+      recipient_currency: recipientCurrency,
+      recipient_expected_amount: conversionDetails.finalAmount,
+      recipient_bank: recipientBank,
+      recipient_account: recipientAccount,
+      ada_amount: conversionDetails.adaAmount,
+      exchange_rate: conversionDetails.exchangeRate,
+      conversion_path: JSON.stringify(conversionDetails.path),
+      fee_percentage: feePercentage,
+      fee_amount: feeAmount,
+      uses_mock_token: usesMockToken,
+      mock_token: mockToken || undefined,
+      policy_id: policyId || undefined,
+      card_number: cardDetails?.number || undefined,
+      payment_link: paymentLink || undefined
+    });
+
+    // Build response data
+    const transferData = {
+      id: transfer.id,
+      status: transfer.status,
+      paymentMethod: transfer.payment_method,
       sender: {
-        currency: senderCurrency,
-        amount: parseFloat(senderAmount),
-        totalAmount,
+        currency: transfer.sender_currency,
+        amount: transfer.sender_amount,
+        totalAmount: transfer.total_amount,
       },
       recipient: {
-        name: recipientName,
-        currency: recipientCurrency,
-        expectedAmount: conversionDetails.finalAmount,
-        bank: recipientBank,
-        account: recipientAccount,
+        name: transfer.recipient_name,
+        currency: transfer.recipient_currency,
+        expectedAmount: transfer.recipient_expected_amount,
+        bank: transfer.recipient_bank,
+        account: transfer.recipient_account,
       },
       conversion: {
-        adaAmount: conversionDetails.adaAmount,
-        exchangeRate: conversionDetails.exchangeRate,
-        path: conversionDetails.path,
+        adaAmount: transfer.ada_amount,
+        exchangeRate: transfer.exchange_rate,
+        path: JSON.parse(transfer.conversion_path || '[]'),
       },
       fees: {
-        percentage: feePercentage,
-        amount: feeAmount,
+        percentage: transfer.fee_percentage,
+        amount: transfer.fee_amount,
       },
       blockchain: {
-        usesMockToken,
-        mockToken,
-        policyId,
-        txHash: null, // Will be updated after blockchain transaction
+        usesMockToken: transfer.uses_mock_token,
+        mockToken: transfer.mock_token,
+        policyId: transfer.policy_id,
+        txHash: transfer.tx_hash,
       },
-      createdAt: new Date().toISOString(),
+      paymentLink: transfer.payment_link,
+      createdAt: transfer.created_at,
     };
-
-    // TODO: Save to database
-    // await transferRepository.create(transferData);
 
     res.json({
       success: true,
@@ -164,17 +207,72 @@ router.get('/status/:transferId', async (req, res) => {
   try {
     const { transferId } = req.params;
 
-    // TODO: Retrieve from database
-    // const transfer = await transferRepository.findById(transferId);
+    // Retrieve from database
+    const transfer = await TransferRepository.findById(transferId);
 
-    // Mock response
+    if (!transfer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transfer not found',
+      });
+    }
+
     res.json({
       success: true,
       data: {
-        transferId,
-        status: 'completed',
-        blockchainTx: 'https://preprod.cardanoscan.io/transaction/abc123',
-        completedAt: new Date().toISOString(),
+        transferId: transfer.id,
+        status: transfer.status,
+        blockchainTx: transfer.blockchain_tx_url || transfer.tx_hash,
+        completedAt: transfer.completed_at,
+        createdAt: transfer.created_at,
+        paidAt: transfer.paid_at,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+/**
+ * POST /api/transfer/:transferId/status
+ * Update transfer status (for blockchain processing)
+ */
+router.post('/:transferId/status', async (req, res) => {
+  try {
+    const { transferId } = req.params;
+    const { status, tx_hash, blockchain_tx_url } = req.body;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        error: 'Status is required',
+      });
+    }
+
+    const validStatuses = ['pending', 'paid', 'processing', 'completed', 'failed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
+      });
+    }
+
+    const transfer = await TransferRepository.updateStatus(
+      transferId,
+      status,
+      { tx_hash, blockchain_tx_url }
+    );
+
+    res.json({
+      success: true,
+      data: {
+        transferId: transfer.id,
+        status: transfer.status,
+        blockchainTx: transfer.blockchain_tx_url || transfer.tx_hash,
+        updatedAt: transfer.updated_at,
       },
     });
   } catch (error: any) {
@@ -193,89 +291,64 @@ router.get('/details/:transferId', async (req, res) => {
   try {
     const { transferId } = req.params;
 
-    // TODO: Retrieve from database
-    // const transfer = await transferRepository.findById(transferId);
+    // Retrieve from database
+    const transfer = await TransferRepository.findById(transferId);
 
-    // Mock detailed response
+    if (!transfer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transfer not found',
+      });
+    }
+
+    // Build detailed response from database record
+    const conversionPath = transfer.conversion_path ? JSON.parse(transfer.conversion_path) : [];
+
     const transferDetails = {
-      transferId,
-      status: 'completed',
-      paymentMethod: 'MASTERCARD',
+      transferId: transfer.id,
+      status: transfer.status,
+      paymentMethod: transfer.payment_method,
       sender: {
-        currency: 'USD',
-        amount: 100,
-        symbol: '$',
-        totalCharged: 101.5,
+        currency: transfer.sender_currency,
+        amount: transfer.sender_amount,
+        totalCharged: transfer.total_amount,
       },
       recipient: {
-        name: 'John Doe',
-        currency: 'IDR',
-        amount: 1562960,
-        symbol: 'Rp',
-        bank: 'Bank BNI',
-        account: '1234567890',
+        name: transfer.recipient_name,
+        currency: transfer.recipient_currency,
+        amount: transfer.recipient_expected_amount,
+        bank: transfer.recipient_bank,
+        account: transfer.recipient_account,
       },
       blockchain: {
-        path: ['USD', 'mockADA', 'mockIDRX', 'IDR'],
-        mockADAAmount: 149.25,
-        hubToken: 'mockADA',
-        recipientToken: 'mockIDRX',
-        policyIds: {
-          mockADA: '1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93',
-          mockIDRX: '5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9',
-        },
-        transactions: [
-          {
-            step: 1,
-            action: 'Mint mockADA',
-            amount: '149.25 mockADA',
-            txHash: '8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0',
-            cardanoScanUrl: 'https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0',
-            timestamp: '2025-10-09T07:45:30.000Z',
-          },
-          {
-            step: 2,
-            action: 'Swap mockADA to mockIDRX',
-            from: '149.25 mockADA',
-            to: '1,562,960 mockIDRX',
-            txHash: 'c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff',
-            cardanoScanUrl: 'https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff',
-            timestamp: '2025-10-09T07:46:00.000Z',
-          },
-        ],
+        path: conversionPath,
+        mockADAAmount: transfer.ada_amount,
+        hubToken: transfer.mock_token,
+        recipientToken: transfer.mock_token,
+        policyId: transfer.policy_id,
+        txHash: transfer.tx_hash,
+        cardanoScanUrl: transfer.blockchain_tx_url,
       },
       fees: {
-        percentage: 1.5,
-        amount: 1.5,
+        percentage: transfer.fee_percentage,
+        amount: transfer.fee_amount,
       },
       timeline: [
         {
           status: 'INITIATED',
-          timestamp: '2025-10-09T07:45:00.000Z',
+          timestamp: transfer.created_at,
         },
-        {
+        ...(transfer.paid_at ? [{
           status: 'PAYMENT_CONFIRMED',
-          timestamp: '2025-10-09T07:45:30.000Z',
-        },
-        {
-          status: 'MINTED_MOCKADA',
-          timestamp: '2025-10-09T07:45:35.000Z',
-        },
-        {
-          status: 'SWAPPED_TO_RECIPIENT_TOKEN',
-          timestamp: '2025-10-09T07:46:00.000Z',
-        },
-        {
-          status: 'BANK_PAYOUT_INITIATED',
-          timestamp: '2025-10-09T07:46:30.000Z',
-        },
-        {
+          timestamp: transfer.paid_at,
+        }] : []),
+        ...(transfer.completed_at ? [{
           status: 'COMPLETED',
-          timestamp: '2025-10-09T07:50:00.000Z',
-        },
+          timestamp: transfer.completed_at,
+        }] : []),
       ],
-      createdAt: '2025-10-09T07:45:00.000Z',
-      completedAt: '2025-10-09T07:50:00.000Z',
+      createdAt: transfer.created_at,
+      completedAt: transfer.completed_at,
     };
 
     res.json({
@@ -293,148 +366,88 @@ router.get('/details/:transferId', async (req, res) => {
 /**
  * GET /api/transfer/history
  * Get user transfer history with blockchain details
- * Query: userId, limit, offset, status, paymentMethod
+ * Query: userId, whatsappNumber, limit, offset, status, paymentMethod
  */
 router.get('/history', async (req, res) => {
   try {
-    const { userId, limit = 10, offset = 0, status, paymentMethod } = req.query;
+    const { userId, whatsappNumber, limit = 20, offset = 0, status, paymentMethod } = req.query;
 
-    // TODO: Retrieve from database with filters
-    // const transfers = await transferRepository.findByUserId(userId, { limit, offset, status, paymentMethod });
+    let transfers: any[] = [];
 
-    // Mock response with sample data
-    const mockTransfers = [
-      {
-        transferId: 'TXN-20251009-ABC123',
-        status: 'completed',
-        paymentMethod: 'MASTERCARD',
-        sender: {
-          currency: 'USD',
-          amount: 100,
-          symbol: '$',
-        },
-        recipient: {
-          name: 'John Doe',
-          currency: 'IDR',
-          amount: 1562960,
-          symbol: 'Rp',
-          bank: 'Bank BNI',
-          account: '****7890',
-        },
-        blockchain: {
-          path: ['USD', 'mockADA', 'mockIDRX', 'IDR'],
-          mockADAAmount: 149.25,
-          hubToken: 'mockADA',
-          recipientToken: 'mockIDRX',
-          txHash: '8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0',
-          cardanoScanUrl: 'https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0',
-          policyIds: {
-            mockADA: '1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93',
-            mockIDRX: '5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9',
-          },
-        },
-        fees: {
-          percentage: 1.5,
-          amount: 1.5,
-        },
-        createdAt: '2025-10-08T10:30:00.000Z',
-        completedAt: '2025-10-08T10:35:00.000Z',
-      },
-      {
-        transferId: 'TXN-20251008-XYZ789',
-        status: 'completed',
-        paymentMethod: 'WALLET',
-        sender: {
-          currency: 'USDT',
-          amount: 200,
-          symbol: '₮',
-        },
-        recipient: {
-          name: 'Jane Smith',
-          currency: 'PHP',
-          amount: 11236,
-          symbol: '₱',
-          bank: 'BDO',
-          account: '****3210',
-        },
-        blockchain: {
-          path: ['USDT', 'mockADA', 'PHP'],
-          mockADAAmount: 298.50,
-          hubToken: 'mockADA',
-          recipientToken: null,
-          txHash: 'e77edefe96e30e1c48d2f77d6caef5dda57dd9b5be0bbc2d7c2a6926e0a7e0bb',
-          cardanoScanUrl: 'https://preprod.cardanoscan.io/transaction/e77edefe96e30e1c48d2f77d6caef5dda57dd9b5be0bbc2d7c2a6926e0a7e0bb',
-          policyIds: {
-            mockADA: '1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93',
-          },
-        },
-        fees: {
-          percentage: 1.0,
-          amount: 2.0,
-        },
-        createdAt: '2025-10-08T08:15:00.000Z',
-        completedAt: '2025-10-08T08:20:00.000Z',
-      },
-      {
-        transferId: 'TXN-20251007-DEF456',
-        status: 'processing',
-        paymentMethod: 'MASTERCARD',
-        sender: {
-          currency: 'EUR',
-          amount: 150,
-          symbol: '€',
-        },
-        recipient: {
-          name: 'Alice Johnson',
-          currency: 'JPY',
-          amount: 24217,
-          symbol: '¥',
-          bank: 'MUFG Bank',
-          account: '****5678',
-        },
-        blockchain: {
-          path: ['EUR', 'mockADA', 'mockJPYC', 'JPY'],
-          mockADAAmount: 243.28,
-          hubToken: 'mockADA',
-          recipientToken: 'mockJPYC',
-          txHash: null,
-          cardanoScanUrl: null,
-          policyIds: {
-            mockADA: '1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93',
-            mockJPYC: '7725300e8d414e0fccad0a562e3a9c585970e84e7e92d422111e1e29',
-          },
-        },
-        fees: {
-          percentage: 1.5,
-          amount: 2.25,
-        },
-        createdAt: '2025-10-07T14:45:00.000Z',
-        completedAt: null,
-      },
-    ];
+    // Retrieve from database
+    if (userId) {
+      transfers = await TransferRepository.findByUserId(
+        userId as string,
+        parseInt(limit as string)
+      );
+    } else if (whatsappNumber) {
+      transfers = await TransferRepository.findByWhatsAppNumber(
+        whatsappNumber as string,
+        parseInt(limit as string)
+      );
+    } else {
+      // Get recent transfers (for admin view)
+      transfers = await TransferRepository.getRecent(parseInt(limit as string));
+    }
 
     // Apply filters
-    let filteredTransfers = mockTransfers;
     if (status) {
-      filteredTransfers = filteredTransfers.filter(t => t.status === status);
+      transfers = transfers.filter(t => t.status === status);
     }
+
     if (paymentMethod) {
-      filteredTransfers = filteredTransfers.filter(t => t.paymentMethod === paymentMethod);
+      transfers = transfers.filter(t => t.payment_method === paymentMethod);
     }
 
     // Apply pagination
     const startIndex = parseInt(offset as string);
     const endIndex = startIndex + parseInt(limit as string);
-    const paginatedTransfers = filteredTransfers.slice(startIndex, endIndex);
+    const paginatedTransfers = transfers.slice(startIndex, endIndex);
+
+    // Format response
+    const formattedTransfers = paginatedTransfers.map(transfer => {
+      const conversionPath = transfer.conversion_path ? JSON.parse(transfer.conversion_path) : [];
+      return {
+        transferId: transfer.id,
+        status: transfer.status,
+        paymentMethod: transfer.payment_method,
+        sender: {
+          currency: transfer.sender_currency,
+          amount: transfer.sender_amount,
+        },
+        recipient: {
+          name: transfer.recipient_name,
+          currency: transfer.recipient_currency,
+          amount: transfer.recipient_expected_amount,
+          bank: transfer.recipient_bank,
+          account: `****${transfer.recipient_account.slice(-4)}`,
+        },
+        blockchain: {
+          path: conversionPath,
+          mockADAAmount: transfer.ada_amount,
+          hubToken: transfer.mock_token,
+          recipientToken: transfer.mock_token,
+          txHash: transfer.tx_hash,
+          cardanoScanUrl: transfer.blockchain_tx_url,
+          policyId: transfer.policy_id,
+        },
+        fees: {
+          percentage: transfer.fee_percentage,
+          amount: transfer.fee_amount,
+        },
+        createdAt: transfer.created_at,
+        completedAt: transfer.completed_at,
+      };
+    });
 
     res.json({
       success: true,
       data: {
-        transfers: paginatedTransfers,
-        total: filteredTransfers.length,
+        transfers: formattedTransfers,
+        total: transfers.length,
         limit: parseInt(limit as string),
         offset: parseInt(offset as string),
-        hasMore: endIndex < filteredTransfers.length,
+        hasMore: endIndex < transfers.length,
       },
     });
   } catch (error: any) {
