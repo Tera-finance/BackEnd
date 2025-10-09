@@ -1,19 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { supabase, Transaction } from '../utils/database';
-import { BlockchainService } from './blockchain.service';
+import { query, queryOne, Transaction, User } from '../utils/database';
 import { ExchangeService } from './exchange.service';
-import { WalletService } from './wallet.service';
-import { TransactionStatus } from '../types';
 
 export class TransactionService {
-  private blockchainService: BlockchainService;
   private exchangeService: ExchangeService;
-  private walletService: WalletService;
 
   constructor() {
-    this.blockchainService = new BlockchainService();
     this.exchangeService = new ExchangeService();
-    this.walletService = new WalletService();
   }
 
   async createTransaction(
@@ -25,9 +18,10 @@ export class TransactionService {
     recipientBankAccount?: string
   ): Promise<Transaction> {
     try {
-      const sender = await prisma.user.findUnique({
-        where: { id: senderId }
-      });
+      const sender = await queryOne<User>(
+        'SELECT * FROM users WHERE id = ?',
+        [senderId]
+      );
 
       if (!sender) {
         throw new Error('Sender not found');
@@ -37,12 +31,6 @@ export class TransactionService {
         throw new Error('Sender must be KYC verified');
       }
 
-      // Get sender's active wallet
-      const wallet = await this.walletService.getActiveWallet(senderId);
-      if (!wallet) {
-        throw new Error('No active wallet found');
-      }
-
       // Calculate transfer amounts and fees
       const calculation = await this.exchangeService.calculateTransferAmount(
         sourceAmount,
@@ -50,232 +38,131 @@ export class TransactionService {
         targetCurrency
       );
 
-      // Check wallet balance
-      const balance = await this.walletService.getWalletBalance(
-        wallet.walletAddress,
-        sourceCurrency === 'USDC' ? '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' : undefined // Polygon USDC contract
-      );
-
-      if (parseFloat(balance) < calculation.totalAmount) {
-        throw new Error('Insufficient balance');
-      }
-
-      const transaction = await prisma.transaction.create({
-        data: {
-          id: uuidv4(),
+      const transactionId = uuidv4();
+      await query(
+        `INSERT INTO transactions 
+         (id, sender_id, recipient_phone, source_currency, target_currency, 
+          source_amount, target_amount, exchange_rate, fee_amount, total_amount, 
+          status, recipient_bank_account) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)`,
+        [
+          transactionId,
           senderId,
           recipientPhone,
           sourceCurrency,
           targetCurrency,
-          sourceAmount: calculation.sourceAmount,
-          targetAmount: calculation.targetAmount,
-          exchangeRate: calculation.exchangeRate,
-          feeAmount: calculation.feeAmount,
-          totalAmount: calculation.totalAmount,
-          status: 'PENDING',
+          calculation.sourceAmount,
+          calculation.targetAmount,
+          calculation.exchangeRate,
+          calculation.feeAmount,
+          calculation.totalAmount,
           recipientBankAccount
-        }
-      });
-
-      console.log('Transaction created:', transaction.id);
-      return transaction;
-    } catch (error) {
-      console.error('Create transaction error:', error);
-      throw error;
-    }
-  }
-
-  async processTransaction(transactionId: string): Promise<Transaction> {
-    try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id: transactionId },
-        include: { sender: true }
-      });
-
-      if (!transaction) {
-        throw new Error('Transaction not found');
-      }
-
-      if (transaction.status !== 'PENDING') {
-        throw new Error('Transaction is not pending');
-      }
-
-      // Get sender's wallet
-      const wallet = await this.walletService.getActiveWallet(transaction.senderId);
-      if (!wallet) {
-        throw new Error('Sender wallet not found');
-      }
-
-      // Update transaction status to PROCESSING
-      await prisma.transaction.update({
-        where: { id: transactionId },
-        data: { status: 'PROCESSING' }
-      });
-
-      // Initiate blockchain transfer
-      const tokenAddress = transaction.sourceCurrency === 'USDC' 
-        ? '0x2791bca1f2de4661ed88a30c99a7a9449aa84174' // Polygon USDC
-        : '0x0000000000000000000000000000000000000000'; // Native token
-
-      const txHash = await this.blockchainService.initiateTransfer(
-        wallet.walletAddress,
-        '0x0000000000000000000000000000000000000000', // Contract address
-        transaction.sourceAmount.toString(),
-        tokenAddress
+        ]
       );
 
-      // Update transaction with blockchain hash
-      const updatedTransaction = await prisma.transaction.update({
-        where: { id: transactionId },
-        data: { 
-          blockchainTxHash: txHash,
-          status: 'PROCESSING'
-        }
-      });
-
-      console.log('Transaction processing:', transactionId, 'Hash:', txHash);
-      
-      // In a real implementation, you would:
-      // 1. Lock tokens in smart contract
-      // 2. Notify local partner about the transfer
-      // 3. Wait for partner to process IDR transfer
-      // 4. Complete transaction when confirmed
-
-      return updatedTransaction;
-    } catch (error) {
-      console.error('Process transaction error:', error);
-      
-      // Mark transaction as failed
-      await prisma.transaction.update({
-        where: { id: transactionId },
-        data: { status: 'FAILED' }
-      });
-      
-      throw error;
-    }
-  }
-
-  async completeTransaction(transactionId: string): Promise<Transaction> {
-    try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id: transactionId }
-      });
+      const transaction = await queryOne<Transaction>(
+        'SELECT * FROM transactions WHERE id = ?',
+        [transactionId]
+      );
 
       if (!transaction) {
-        throw new Error('Transaction not found');
+        throw new Error('Failed to create transaction');
       }
 
-      if (transaction.status !== 'PROCESSING') {
-        throw new Error('Transaction is not being processed');
-      }
-
-      // Update transaction status to COMPLETED
-      const completedTransaction = await prisma.transaction.update({
-        where: { id: transactionId },
-        data: { 
-          status: 'COMPLETED',
-          completedAt: new Date()
-        }
-      });
-
-      console.log('Transaction completed:', transactionId);
-      return completedTransaction;
+      return transaction;
     } catch (error) {
-      console.error('Complete transaction error:', error);
+      console.error('Error creating transaction:', error);
       throw error;
     }
   }
 
-  async getTransaction(transactionId: string): Promise<Transaction | null> {
-    try {
-      return await prisma.transaction.findUnique({
-        where: { id: transactionId },
-        include: { sender: true }
-      });
-    } catch (error) {
-      console.error('Get transaction error:', error);
-      throw error;
-    }
+  async getTransactionById(transactionId: string): Promise<Transaction | null> {
+    return await queryOne<Transaction>(
+      'SELECT * FROM transactions WHERE id = ?',
+      [transactionId]
+    );
   }
 
-  async getUserTransactions(
-    userId: string,
-    limit: number = 50,
-    offset: number = 0
-  ): Promise<Transaction[]> {
-    try {
-      return await prisma.transaction.findMany({
-        where: { senderId: userId },
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset
-      });
-    } catch (error) {
-      console.error('Get user transactions error:', error);
-      throw error;
-    }
-  }
-
-  async getTransactionsByStatus(status: TransactionStatus): Promise<Transaction[]> {
-    try {
-      return await prisma.transaction.findMany({
-        where: { status },
-        include: { sender: true },
-        orderBy: { createdAt: 'desc' }
-      });
-    } catch (error) {
-      console.error('Get transactions by status error:', error);
-      throw error;
-    }
+  async getTransactionsByUser(userId: string, limit = 10): Promise<Transaction[]> {
+    return await query<Transaction>(
+      'SELECT * FROM transactions WHERE sender_id = ? ORDER BY created_at DESC LIMIT ?',
+      [userId, limit]
+    );
   }
 
   async updateTransactionStatus(
     transactionId: string,
-    status: TransactionStatus,
+    status: 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED',
     blockchainTxHash?: string
   ): Promise<Transaction> {
-    try {
-      const updateData: any = { status };
-      
-      if (blockchainTxHash) {
-        updateData.blockchainTxHash = blockchainTxHash;
-      }
+    const updates: string[] = ['status = ?'];
+    const params: any[] = [status];
 
-      if (status === 'COMPLETED') {
-        updateData.completedAt = new Date();
-      }
-
-      return await prisma.transaction.update({
-        where: { id: transactionId },
-        data: updateData
-      });
-    } catch (error) {
-      console.error('Update transaction status error:', error);
-      throw error;
+    if (blockchainTxHash) {
+      updates.push('blockchain_tx_hash = ?');
+      params.push(blockchainTxHash);
     }
+
+    if (status === 'COMPLETED') {
+      updates.push('completed_at = NOW()');
+    }
+
+    params.push(transactionId);
+
+    await query(
+      `UPDATE transactions SET ${updates.join(', ')} WHERE id = ?`,
+      params
+    );
+
+    const transaction = await queryOne<Transaction>(
+      'SELECT * FROM transactions WHERE id = ?',
+      [transactionId]
+    );
+
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+
+    return transaction;
   }
 
-  async cancelTransaction(transactionId: string): Promise<Transaction> {
-    try {
-      const transaction = await prisma.transaction.findUnique({
-        where: { id: transactionId }
-      });
+  async completeTransaction(transactionId: string, blockchainTxHash: string): Promise<Transaction> {
+    return await this.updateTransactionStatus(transactionId, 'COMPLETED', blockchainTxHash);
+  }
 
-      if (!transaction) {
-        throw new Error('Transaction not found');
-      }
+  async failTransaction(transactionId: string): Promise<Transaction> {
+    return await this.updateTransactionStatus(transactionId, 'FAILED');
+  }
 
-      if (transaction.status !== 'PENDING') {
-        throw new Error('Only pending transactions can be cancelled');
-      }
+  async getTransactionHistory(userId: string, limit = 20): Promise<Transaction[]> {
+    return await query<Transaction>(
+      `SELECT * FROM transactions 
+       WHERE sender_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT ?`,
+      [userId, limit]
+    );
+  }
 
-      return await prisma.transaction.update({
-        where: { id: transactionId },
-        data: { status: 'FAILED' }
-      });
-    } catch (error) {
-      console.error('Cancel transaction error:', error);
-      throw error;
-    }
+  async getTransactionStats(userId: string): Promise<{
+    totalTransactions: number;
+    completedTransactions: number;
+    totalAmount: number;
+  }> {
+    const stats = await queryOne<any>(
+      `SELECT 
+        COUNT(*) as totalTransactions,
+        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completedTransactions,
+        SUM(CASE WHEN status = 'COMPLETED' THEN total_amount ELSE 0 END) as totalAmount
+       FROM transactions 
+       WHERE sender_id = ?`,
+      [userId]
+    );
+
+    return {
+      totalTransactions: stats?.totalTransactions || 0,
+      completedTransactions: stats?.completedTransactions || 0,
+      totalAmount: stats?.totalAmount || 0
+    };
   }
 }

@@ -462,14 +462,59 @@ The database includes the following main entities:
 
 ## 🚀 Deployment
 
-### Vercel Deployment
+### Production VPS Deployment (Recommended)
+
+Deploy to your own VPS with domain for full control and to be consumed by WhatsApp bot and website.
+
+**📚 Complete Deployment Documentation:**
+- **[DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md)** - Start here for overview
+- **[DEPLOYMENT_README.md](./DEPLOYMENT_README.md)** - Quick deployment guide
+- **[VPS_DEPLOYMENT_GUIDE.md](./VPS_DEPLOYMENT_GUIDE.md)** - Detailed step-by-step
+- **[PRODUCTION_CHECKLIST.md](./PRODUCTION_CHECKLIST.md)** - Verification checklist
+- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Command cheat sheet
+
+**Quick Deploy:**
+```bash
+# 1. On VPS: Run initial setup
+sudo ./setup-vps.sh
+
+# 2. Clone repository
+git clone https://github.com/your-username/TrustBridge.git
+cd TrustBridge/backend-trustbridge
+
+# 3. Configure environment
+cp .env.example .env
+nano .env
+
+# 4. Build and start
+npm install --production
+npm run build
+pm2 start ecosystem.config.js
+
+# 5. Configure Nginx & SSL
+sudo cp nginx.conf /etc/nginx/sites-available/trustbridge-api
+sudo ln -s /etc/nginx/sites-available/trustbridge-api /etc/nginx/sites-enabled/
+sudo certbot --nginx -d api.yourdomain.com
+```
+
+**What to Deploy:**
+- ✅ Deploy `backend-trustbridge` to VPS (this provides the REST API)
+- ❌ Don't deploy `be-offchain` (run manually for blockchain operations)
+- ❌ Don't deploy `CardanoPay` frontend here (deploy to Vercel separately)
+
+**Your production API will be available at:**
+```
+https://api.yourdomain.com
+```
+
+### Alternative: Vercel Deployment (Serverless)
 ```bash
 npm run build
 vercel --prod
 ```
 
 ### Environment Variables (Production)
-Ensure all environment variables are configured in your deployment platform.
+Ensure all environment variables are configured in your deployment platform. See `.env.example` for required variables.
 
 ## 🔍 Health Check
 

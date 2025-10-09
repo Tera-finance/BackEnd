@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { apiRateLimit } from '../middleware/rateLimit';
-import { supabase } from '../utils/database';
+import { queryOne, User } from '../utils/database';
 
 const router = Router();
 
@@ -95,13 +95,12 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, whatsapp_number, country_code, status, kyc_nft_token_id, created_at, updated_at')
-      .eq('id', req.user.id)
-      .single();
+    const user = await queryOne<User>(
+      'SELECT id, whatsapp_number, country_code, status, kyc_nft_token_id, created_at, updated_at FROM users WHERE id = ?',
+      [req.user.id]
+    );
 
-    if (error || !user) {
+    if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 

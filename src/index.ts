@@ -1,19 +1,16 @@
 import app from './app';
 import { config } from './utils/config';
-import { supabase, pgPool } from './utils/database';
+import { testConnection, closePool } from './utils/database';
 import { redis } from './utils/redis';
 
 async function startServer() {
   try {
-    // Test database connection
-    try {
-      const { data, error } = await supabase.from('users').select('count').limit(1);
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "no rows found" which is ok
-        throw error;
-      }
-      console.log('✅ Connected to Supabase');
-    } catch (error) {
-      console.warn('⚠️  Supabase connection test failed:', error);
+    // Test MySQL database connection
+    const dbConnected = await testConnection();
+    if (dbConnected) {
+      console.log('✅ Connected to MySQL database');
+    } else {
+      console.warn('⚠️  MySQL connection test failed');
     }
 
     // Test Redis connection
@@ -24,7 +21,8 @@ async function startServer() {
     const server = app.listen(config.port, () => {
       console.log(`🚀 TrustBridge Backend running on port ${config.port}`);
       console.log(`🌍 Environment: ${config.nodeEnv}`);
-      console.log(`📱 WhatsApp webhook ready at /api/whatsapp/webhook`);
+      console.log(`� Cardano Network: ${config.cardano.network}`);
+      console.log(`💾 Database: MySQL`);
     });
 
     // Graceful shutdown
@@ -35,8 +33,8 @@ async function startServer() {
         console.log('HTTP server closed.');
         
         try {
-          await pgPool.end();
-          console.log('Database connection pool closed.');
+          await closePool();
+          console.log('MySQL connection pool closed.');
           
           await redis.quit();
           console.log('Redis connection closed.');

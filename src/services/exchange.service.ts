@@ -22,8 +22,8 @@ export class ExchangeService {
         return JSON.parse(cachedRate);
       }
 
-      // Fetch from Indodax API
-      const rate = await this.fetchRateFromIndodax(fromCurrency, toCurrency);
+      // Fetch from exchange rate API
+      const rate = await this.fetchExchangeRate(fromCurrency, toCurrency);
       
       // Cache the result
       await redis.setex(cacheKey, this.CACHE_DURATION, JSON.stringify(rate));
@@ -35,45 +35,53 @@ export class ExchangeService {
     }
   }
 
-  private async fetchRateFromIndodax(fromCurrency: string, toCurrency: string): Promise<ExchangeRate> {
+  private async fetchExchangeRate(fromCurrency: string, toCurrency: string): Promise<ExchangeRate> {
     try {
-      // For USDC to IDR conversion
-      if (fromCurrency === 'USDC' && toCurrency === 'IDR') {
-        const response = await axios.get(`${config.indodax.apiUrl}/ticker/usdcidr`);
-        
-        if (response.data && response.data.ticker) {
-          return {
-            from: fromCurrency,
-            to: toCurrency,
-            rate: parseFloat(response.data.ticker.last),
-            timestamp: Date.now()
-          };
+      // Use free exchange rate API or fallback to mock rates
+      if (config.exchange.apiUrl) {
+        try {
+          const response = await axios.get(`${config.exchange.apiUrl}/${fromCurrency}`);
+          
+          if (response.data && response.data.rates && response.data.rates[toCurrency]) {
+            return {
+              from: fromCurrency,
+              to: toCurrency,
+              rate: response.data.rates[toCurrency],
+              timestamp: Date.now()
+            };
+          }
+        } catch (apiError) {
+          console.warn('Exchange rate API failed, using fallback rates:', apiError);
         }
       }
 
-      // For USD to IDR conversion (fallback)
-      if ((fromCurrency === 'USD' || fromCurrency === 'USDC') && toCurrency === 'IDR') {
-        const response = await axios.get(`${config.indodax.apiUrl}/ticker/usdidr`);
-        
-        if (response.data && response.data.ticker) {
-          return {
-            from: fromCurrency,
-            to: toCurrency,
-            rate: parseFloat(response.data.ticker.last),
-            timestamp: Date.now()
-          };
-        }
-      }
+      // Fallback mock rates for development/testing
+      const mockRates: Record<string, number> = {
+        'USD_IDR': 15000,
+        'USDC_IDR': 15000,
+        'USD_USDC': 1,
+        'IDR_USD': 1 / 15000,
+        'IDR_USDC': 1 / 15000,
+        'USDC_USD': 1
+      };
 
-      throw new Error('Unsupported currency pair');
-    } catch (error) {
-      console.error('Indodax API error:', error);
-      
-      // Fallback to mock rate for development
+      const rateKey = `${fromCurrency}_${toCurrency}`;
+      const rate = mockRates[rateKey] || 1;
+
       return {
         from: fromCurrency,
         to: toCurrency,
-        rate: fromCurrency === 'USDC' && toCurrency === 'IDR' ? 15000 : 1,
+        rate: rate,
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.error('Exchange rate fetch error:', error);
+      
+      // Final fallback
+      return {
+        from: fromCurrency,
+        to: toCurrency,
+        rate: 1,
         timestamp: Date.now()
       };
     }

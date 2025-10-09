@@ -6,51 +6,47 @@ export const config = {
   port: parseInt(process.env.PORT || '3000'),
   nodeEnv: process.env.NODE_ENV || 'development',
   
-  supabaseUrl: process.env.SUPABASE_URL || '',
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY || '',
-  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-  databaseUrl: process.env.DATABASE_URL || 'postgresql://localhost:5432/trustbridge',
+  // MySQL Database Configuration
+  database: {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'trustbridge',
+    password: process.env.DB_PASSWORD || '',
+    name: process.env.DB_NAME || 'trustbridge'
+  },
   
+  // Redis Cache
   redis: {
     url: process.env.REDIS_URL || 'redis://localhost:6379'
   },
   
+  // JWT Authentication
   jwt: {
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key',
     expiresIn: '15m',
     refreshExpiresIn: '7d'
   },
-  
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || ''
+
+  // Cardano Blockchain
+  cardano: {
+    network: process.env.CARDANO_NETWORK || 'Preprod',
+    blockfrostApiKey: process.env.BLOCKFROST_API_KEY || '',
+    blockfrostUrl: process.env.BLOCKFROST_URL || 'https://cardano-preprod.blockfrost.io/api/v0'
   },
   
-  blockchain: {
-    polygonRpcUrl: process.env.POLYGON_RPC_URL || '',
-    polygonTestnetRpcUrl: process.env.POLYGON_TESTNET_RPC_URL || '',
-    privateKey: process.env.PRIVATE_KEY || ''
+  // Exchange Rates API (for fiat conversions)
+  exchange: {
+    apiKey: process.env.EXCHANGE_RATE_API_KEY || '',
+    apiUrl: process.env.EXCHANGE_RATE_API_URL || 'https://api.exchangerate-api.com/v4/latest'
   },
   
-  ipfs: {
-    apiUrl: process.env.IPFS_API_URL || 'http://localhost:5001'
-  },
-  
-  whatsapp: {
-    apiUrl: process.env.WHATSAPP_API_URL || 'https://graph.facebook.com/v17.0',
-    accessToken: process.env.WHATSAPP_ACCESS_TOKEN || '',
-    verifyToken: process.env.WHATSAPP_VERIFY_TOKEN || '',
-    phoneNumberId: process.env.WHATSAPP_PHONE_NUMBER_ID || ''
-  },
-  
-  indodax: {
-    apiUrl: process.env.INDODAX_API_URL || 'https://indodax.com/api'
-  },
-  
+  // Encryption
   encryption: {
     key: process.env.ENCRYPTION_KEY || 'your-32-character-encryption-key'
   },
   
+  // Rate Limiting
   rateLimiting: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000'),
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100')

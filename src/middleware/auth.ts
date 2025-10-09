@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../utils/config';
-import { supabase } from '../utils/database';
+import { queryOne, User } from '../utils/database';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -21,13 +21,12 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, config.jwt.secret) as { userId: string; whatsappNumber: string };
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', decoded.userId)
-      .single();
+    const user = await queryOne<User>(
+      'SELECT * FROM users WHERE id = ?',
+      [decoded.userId]
+    );
 
-    if (error || !user) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid token' });
     }
 
@@ -52,13 +51,12 @@ export const requireKYC = async (req: AuthRequest, res: Response, next: NextFunc
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', req.user.id)
-      .single();
+    const user = await queryOne<User>(
+      'SELECT * FROM users WHERE id = ?',
+      [req.user.id]
+    );
 
-    if (error || !user || user.status !== 'VERIFIED') {
+    if (!user || user.status !== 'VERIFIED') {
       return res.status(403).json({ error: 'KYC verification required' });
     }
 

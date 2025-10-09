@@ -5,9 +5,10 @@ import { config } from './utils/config';
 
 // Import routes
 import authRoutes from './routes/auth.routes';
-import kycRoutes from './routes/kyc.routes';
-// import transactionRoutes from './routes/transaction.routes'; // TODO: Fix property naming
-// import whatsappRoutes from './routes/whatsapp.routes'; // TODO: Fix property naming
+import cardanoRoutes from './routes/cardano.routes';
+import exchangeRoutes from './routes/exchange.routes';
+import transferRoutes from './routes/transfer.routes';
+import transactionRoutes from './routes/transaction.routes';
 
 const app = express();
 
@@ -36,9 +37,10 @@ app.get('/', (req: Request, res: Response) => {
 
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/kyc', kycRoutes);
-// app.use('/api/transactions', transactionRoutes); // TODO: Fix property naming
-// app.use('/api/whatsapp', whatsappRoutes); // TODO: Fix property naming
+app.use('/api/cardano', cardanoRoutes);
+app.use('/api/exchange', exchangeRoutes);
+app.use('/api/transfer', transferRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {

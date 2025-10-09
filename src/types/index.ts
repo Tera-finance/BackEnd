@@ -1,5 +1,5 @@
 // Re-export database types from our database module
-export { User, KycData, Wallet, Transaction } from '../utils/database';
+export { User, Transaction, CardanoToken, CardanoMint, CardanoSwap } from '../utils/database';
 
 // Define enums that were previously from Prisma
 export type UserStatus = 'PENDING_KYC' | 'VERIFIED' | 'SUSPENDED';
@@ -20,7 +20,7 @@ export interface CreateKycRequest {
   fullName: string;
   dateOfBirth: string;
   address: string;
-  documentFile: Express.Multer.File;
+  // documentFile: Express.Multer.File; // Removed - Multer not used
 }
 
 export interface CreateTransactionRequest {
