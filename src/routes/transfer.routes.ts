@@ -7,6 +7,7 @@ import {
 } from '../config/currencies.config';
 import { TransferRepository } from '../repositories/transfer.repository';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { transferProcessorService } from '../services/transfer-processor.service';
 
 const router = Router();
 
@@ -145,8 +146,23 @@ router.post('/initiate', async (req, res) => {
     res.json({
       success: true,
       data: transferData,
-      message: 'Transfer initiated successfully. Awaiting payment confirmation.',
+      message: 'Transfer initiated successfully. Blockchain processing started.',
     });
+
+    // Trigger blockchain processing in background (non-blocking)
+    // This will:
+    // 1. Mint mockADA (hub token) from source currency
+    // 2. Swap mockADA to recipient mock token (if available)
+    // 3. Update transfer status with transaction hashes
+    setImmediate(async () => {
+      try {
+        console.log(`\n🔗 Triggering blockchain processing for ${transfer.id}...`);
+        await transferProcessorService.processTransfer(transfer.id);
+      } catch (error: any) {
+        console.error(`Background processing error for ${transfer.id}:`, error.message);
+      }
+    });
+
   } catch (error: any) {
     res.status(500).json({
       success: false,

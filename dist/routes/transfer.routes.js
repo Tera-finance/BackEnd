@@ -4,6 +4,7 @@ const express_1 = require("express");
 const exchange_rate_api_service_1 = require("../services/exchange-rate-api.service");
 const currencies_config_1 = require("../config/currencies.config");
 const transfer_repository_1 = require("../repositories/transfer.repository");
+const transfer_processor_service_1 = require("../services/transfer-processor.service");
 const router = (0, express_1.Router)();
 /**
  * POST /api/transfer/initiate
@@ -116,7 +117,21 @@ router.post('/initiate', async (req, res) => {
         res.json({
             success: true,
             data: transferData,
-            message: 'Transfer initiated successfully. Awaiting payment confirmation.',
+            message: 'Transfer initiated successfully. Blockchain processing started.',
+        });
+        // Trigger blockchain processing in background (non-blocking)
+        // This will:
+        // 1. Mint mockADA (hub token) from source currency
+        // 2. Swap mockADA to recipient mock token (if available)
+        // 3. Update transfer status with transaction hashes
+        setImmediate(async () => {
+            try {
+                console.log(`\n🔗 Triggering blockchain processing for ${transfer.id}...`);
+                await transfer_processor_service_1.transferProcessorService.processTransfer(transfer.id);
+            }
+            catch (error) {
+                console.error(`Background processing error for ${transfer.id}:`, error.message);
+            }
         });
     }
     catch (error) {
