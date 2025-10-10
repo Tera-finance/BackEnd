@@ -5,6 +5,7 @@ const exchange_rate_api_service_1 = require("../services/exchange-rate-api.servi
 const currencies_config_1 = require("../config/currencies.config");
 const transfer_repository_1 = require("../repositories/transfer.repository");
 const transfer_processor_service_1 = require("../services/transfer-processor.service");
+const invoice_generator_service_1 = require("../services/invoice-generator.service");
 const router = (0, express_1.Router)();
 /**
  * POST /api/transfer/initiate
@@ -451,6 +452,38 @@ router.post('/calculate', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message,
+        });
+    }
+});
+/**
+ * GET /api/transfer/invoice/:transferId
+ * Generate and download PDF invoice for a transfer
+ */
+router.get('/invoice/:transferId', async (req, res) => {
+    try {
+        const { transferId } = req.params;
+        // Get transfer from database
+        const transfer = await transfer_repository_1.TransferRepository.findById(transferId);
+        if (!transfer) {
+            return res.status(404).json({
+                success: false,
+                error: 'Transfer not found',
+            });
+        }
+        // Generate PDF invoice
+        const pdfBuffer = await invoice_generator_service_1.InvoiceGeneratorService.generateInvoice(transfer);
+        // Set headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=TrustBridge-Invoice-${transferId}.pdf`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        // Send PDF
+        res.send(pdfBuffer);
+    }
+    catch (error) {
+        console.error('Invoice generation error:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to generate invoice',
         });
     }
 });

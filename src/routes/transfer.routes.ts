@@ -8,6 +8,7 @@ import {
 import { TransferRepository } from '../repositories/transfer.repository';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { transferProcessorService } from '../services/transfer-processor.service';
+import { InvoiceGeneratorService } from '../services/invoice-generator.service';
 
 const router = Router();
 
@@ -520,6 +521,43 @@ router.post('/calculate', async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message,
+    });
+  }
+});
+
+/**
+ * GET /api/transfer/invoice/:transferId
+ * Generate and download PDF invoice for a transfer
+ */
+router.get('/invoice/:transferId', async (req, res) => {
+  try {
+    const { transferId } = req.params;
+
+    // Get transfer from database
+    const transfer = await TransferRepository.findById(transferId);
+
+    if (!transfer) {
+      return res.status(404).json({
+        success: false,
+        error: 'Transfer not found',
+      });
+    }
+
+    // Generate PDF invoice
+    const pdfBuffer = await InvoiceGeneratorService.generateInvoice(transfer);
+
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=TrustBridge-Invoice-${transferId}.pdf`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+
+    // Send PDF
+    res.send(pdfBuffer);
+  } catch (error: any) {
+    console.error('Invoice generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate invoice',
     });
   }
 });
