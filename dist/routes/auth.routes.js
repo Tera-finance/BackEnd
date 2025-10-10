@@ -8,13 +8,17 @@ router.post('/login', apiRateLimit, async (req, res) => {
     try {
         const { whatsappNumber, countryCode } = req.body;
         if (!whatsappNumber) {
-            return res.status(400).json({ error: 'WhatsApp number is required' });
+            return res.status(400).json({
+                success: false,
+                error: 'WhatsApp number is required'
+            });
         }
         const user = await AuthService.loginOrRegister(whatsappNumber, countryCode);
         const tokens = AuthService.generateTokens(user);
         // Store refresh token
         await AuthService.storeRefreshToken(user.id, tokens.refreshToken);
         res.json({
+            success: true,
             message: 'Login successful',
             user: {
                 id: user.id,
@@ -26,7 +30,10 @@ router.post('/login', apiRateLimit, async (req, res) => {
     }
     catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
     }
 });
 router.post('/refresh', apiRateLimit, async (req, res) => {

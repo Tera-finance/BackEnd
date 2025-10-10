@@ -10,12 +10,17 @@ import transferRoutes from './routes/transfer.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 const app = express();
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+// CORS configuration - allow frontend localhost
 app.use(cors({
     origin: process.env.NODE_ENV === 'production'
         ? ['https://trustbridge.izcy.tech', 'https://api-trustbridge.izcy.tech']
-        : true, // Allow all origins in development
-    credentials: true
+        : ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow frontend localhost
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));

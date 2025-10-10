@@ -101,6 +101,14 @@ export class CardanoActionsService {
             const tokenNameHex = Buffer.from(tokenInfo.tokenName, 'utf8').toString('hex');
             const assetUnit = policyId + tokenNameHex;
             console.log('⏳ Building mint transaction...');
+            // Get wallet UTxOs to find pure ADA for collateral
+            const utxos = await this.lucid.wallet().getUtxos();
+            // Find pure ADA UTxOs (no tokens) for collateral
+            const pureAdaUtxos = utxos.filter((utxo) => !utxo.assets || Object.keys(utxo.assets).length === 0);
+            console.log(`💰 Found ${pureAdaUtxos.length} pure ADA UTxOs for collateral`);
+            if (pureAdaUtxos.length === 0) {
+                throw new Error('No pure ADA UTxOs available for collateral. Please send some pure ADA (5-10 ADA) to your wallet.');
+            }
             const tx = await this.lucid
                 .newTx()
                 .mintAssets({ [assetUnit]: mintAmount }, redeemer)
