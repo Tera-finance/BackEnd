@@ -1,30 +1,25 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
-const helmet_1 = __importDefault(require("helmet"));
-const config_1 = require("./utils/config");
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import { config } from './utils/config.js';
 // Import routes
-const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
-const cardano_routes_1 = __importDefault(require("./routes/cardano.routes"));
-const exchange_routes_1 = __importDefault(require("./routes/exchange.routes"));
-const transfer_routes_1 = __importDefault(require("./routes/transfer.routes"));
-const transaction_routes_1 = __importDefault(require("./routes/transaction.routes"));
-const app = (0, express_1.default)();
+import authRoutes from './routes/auth.routes.js';
+import cardanoRoutes from './routes/cardano.routes.js';
+import exchangeRoutes from './routes/exchange.routes.js';
+import transferRoutes from './routes/transfer.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
+const app = express();
 // Security middleware
-app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)({
+app.use(helmet());
+app.use(cors({
     origin: process.env.NODE_ENV === 'production'
-        ? ['https://your-frontend-domain.com']
-        : ['http://localhost:3000', 'http://localhost:3001'],
+        ? ['https://trustbridge.izcy.tech', 'https://api-trustbridge.izcy.tech']
+        : true, // Allow all origins in development
     credentials: true
 }));
 // Body parsing middleware
-app.use(express_1.default.json({ limit: '10mb' }));
-app.use(express_1.default.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({
@@ -35,11 +30,11 @@ app.get('/', (req, res) => {
     });
 });
 // API Routes
-app.use('/api/auth', auth_routes_1.default);
-app.use('/api/cardano', cardano_routes_1.default);
-app.use('/api/exchange', exchange_routes_1.default);
-app.use('/api/transfer', transfer_routes_1.default);
-app.use('/api/transactions', transaction_routes_1.default);
+app.use('/api/auth', authRoutes);
+app.use('/api/cardano', cardanoRoutes);
+app.use('/api/exchange', exchangeRoutes);
+app.use('/api/transfer', transferRoutes);
+app.use('/api/transactions', transactionRoutes);
 // 404 handler
 app.use((req, res, next) => {
     res.status(404).json({
@@ -60,10 +55,10 @@ app.use((err, req, res, next) => {
     }
     // Default error response
     res.status(err.status || 500).json({
-        error: config_1.config.nodeEnv === 'production'
+        error: config.nodeEnv === 'production'
             ? 'Internal server error'
             : err.message || 'Internal server error',
-        ...(config_1.config.nodeEnv === 'development' && { stack: err.stack })
+        ...(config.nodeEnv === 'development' && { stack: err.stack })
     });
 });
-exports.default = app;
+export default app;

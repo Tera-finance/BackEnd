@@ -1,18 +1,12 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.exchangeRateService = exports.ExchangeRateAPIService = void 0;
-const axios_1 = __importDefault(require("axios"));
-const node_cache_1 = __importDefault(require("node-cache"));
-class ExchangeRateAPIService {
+import axios from 'axios';
+import NodeCache from 'node-cache';
+export class ExchangeRateAPIService {
     constructor() {
         this.CACHE_TTL = 300; // 5 minutes cache
         // API endpoints
         this.COINGECKO_API = 'https://api.coingecko.com/api/v3';
         this.EXCHANGERATE_API = 'https://api.exchangerate-api.com/v4/latest';
-        this.cache = new node_cache_1.default({ stdTTL: this.CACHE_TTL });
+        this.cache = new NodeCache({ stdTTL: this.CACHE_TTL });
     }
     /**
      * Get ADA price in multiple fiat currencies
@@ -24,7 +18,7 @@ class ExchangeRateAPIService {
             return cached;
         }
         try {
-            const response = await axios_1.default.get(`${this.COINGECKO_API}/simple/price`, {
+            const response = await axios.get(`${this.COINGECKO_API}/simple/price`, {
                 params: {
                     ids: 'cardano',
                     vs_currencies: 'usd,eur,jpy,cny,idr,gbp,mxn,php,vnd,thb,inr,sgd,myr,brl,cad,chf,zar,ngn,aed',
@@ -56,7 +50,7 @@ class ExchangeRateAPIService {
             return cached;
         }
         try {
-            const response = await axios_1.default.get(`${this.EXCHANGERATE_API}/USD`);
+            const response = await axios.get(`${this.EXCHANGERATE_API}/USD`);
             const rates = response.data.rates;
             this.cache.set(cacheKey, rates);
             return rates;
@@ -180,7 +174,7 @@ class ExchangeRateAPIService {
             const coinId = coinIds[symbol.toUpperCase()];
             if (!coinId)
                 return 1.0;
-            const response = await axios_1.default.get(`${this.COINGECKO_API}/simple/price`, {
+            const response = await axios.get(`${this.COINGECKO_API}/simple/price`, {
                 params: {
                     ids: coinId,
                     vs_currencies: 'usd',
@@ -208,6 +202,5 @@ class ExchangeRateAPIService {
         this.cache.flushAll();
     }
 }
-exports.ExchangeRateAPIService = ExchangeRateAPIService;
 // Export singleton instance
-exports.exchangeRateService = new ExchangeRateAPIService();
+export const exchangeRateService = new ExchangeRateAPIService();

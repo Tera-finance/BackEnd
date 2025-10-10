@@ -1,42 +1,7 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const auth_1 = require("../middleware/auth");
-const cardanoRepo = __importStar(require("../repositories/cardano.repository"));
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth.js';
+import * as cardanoRepo from '../repositories/cardano.repository.js';
+const router = Router();
 // Lazy load Cardano services to avoid import errors in dev mode
 let cardanoWalletService;
 let cardanoContractService;
@@ -44,15 +9,15 @@ let cardanoActionsService;
 async function getCardanoServices() {
     try {
         if (!cardanoWalletService) {
-            const walletModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-wallet.service')));
+            const walletModule = await import('../services/cardano-wallet.service');
             cardanoWalletService = walletModule.cardanoWalletService;
         }
         if (!cardanoContractService) {
-            const contractModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-contract.service')));
+            const contractModule = await import('../services/cardano-contract.service');
             cardanoContractService = contractModule.cardanoContractService;
         }
         if (!cardanoActionsService) {
-            const actionsModule = await Promise.resolve().then(() => __importStar(require('../services/cardano-actions.service')));
+            const actionsModule = await import('../services/cardano-actions.service');
             cardanoActionsService = actionsModule.cardanoActionsService;
         }
         return { cardanoWalletService, cardanoContractService, cardanoActionsService };
@@ -99,7 +64,7 @@ router.get('/backend-info', async (req, res) => {
  * Lock funds in a smart contract
  * Requires authentication
  */
-router.post('/lock-funds', auth_1.authenticate, async (req, res) => {
+router.post('/lock-funds', authenticate, async (req, res) => {
     try {
         const { cardanoContractService } = await getCardanoServices();
         const { scriptAddress, amount, datum } = req.body;
@@ -133,7 +98,7 @@ router.post('/lock-funds', auth_1.authenticate, async (req, res) => {
  * Unlock funds from a smart contract
  * Requires authentication
  */
-router.post('/unlock-funds', auth_1.authenticate, async (req, res) => {
+router.post('/unlock-funds', authenticate, async (req, res) => {
     try {
         const { cardanoContractService } = await getCardanoServices();
         const { scriptAddress, scriptCbor, utxos, redeemer } = req.body;
@@ -191,7 +156,7 @@ router.get('/script-utxos/:address', async (req, res) => {
  * Build a transaction for user to sign
  * Requires authentication
  */
-router.post('/build-tx', auth_1.authenticate, async (req, res) => {
+router.post('/build-tx', authenticate, async (req, res) => {
     try {
         const { cardanoContractService } = await getCardanoServices();
         const { userAddress, scriptAddress, amount, datum } = req.body;
@@ -255,7 +220,7 @@ router.post('/submit-tx', async (req, res) => {
  * Create a datum with backend authorization
  * Requires authentication
  */
-router.post('/create-datum', auth_1.authenticate, async (req, res) => {
+router.post('/create-datum', authenticate, async (req, res) => {
     try {
         const { cardanoContractService } = await getCardanoServices();
         const { data } = req.body;
@@ -609,4 +574,4 @@ router.post('/actions/swap', async (req, res) => {
         });
     }
 });
-exports.default = router;
+export default router;

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth';
-import * as cardanoRepo from '../repositories/cardano.repository';
+import { authenticate } from '../middleware/auth.js';
+import * as cardanoRepo from '../repositories/cardano.repository.js';
 
 const router = Router();
 

@@ -1,5 +1,5 @@
 import CryptoJS from 'crypto-js';
-import { config } from './config';
+import { config } from './config.js';
 
 export class EncryptionUtil {
   private static readonly secretKey = config.encryption.key;

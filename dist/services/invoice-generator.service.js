@@ -1,20 +1,14 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.InvoiceGeneratorService = void 0;
-const pdfkit_1 = __importDefault(require("pdfkit"));
-const fs_1 = __importDefault(require("fs"));
-const path_1 = __importDefault(require("path"));
-class InvoiceGeneratorService {
+import PDFDocument from 'pdfkit';
+import fs from 'fs';
+import path from 'path';
+export class InvoiceGeneratorService {
     /**
      * Generate PDF invoice for a transfer
      */
     static async generateInvoice(transfer) {
         return new Promise((resolve, reject) => {
             try {
-                const doc = new pdfkit_1.default({ size: 'A4', margin: 50 });
+                const doc = new PDFDocument({ size: 'A4', margin: 50 });
                 const chunks = [];
                 // Collect PDF data
                 doc.on('data', (chunk) => chunks.push(chunk));
@@ -75,13 +69,22 @@ class InvoiceGeneratorService {
                     .rect(50, amountBoxY, 495, 120)
                     .fillAndStroke('#F3F4F6', '#E5E7EB');
                 // Amount sent
+                const senderAmount = typeof transfer.sender_amount === 'number'
+                    ? transfer.sender_amount
+                    : parseFloat(transfer.sender_amount) || 0;
+                const recipientAmount = typeof transfer.recipient_expected_amount === 'number'
+                    ? transfer.recipient_expected_amount
+                    : parseFloat(transfer.recipient_expected_amount) || 0;
+                const feeAmount = typeof transfer.fee_amount === 'number'
+                    ? transfer.fee_amount
+                    : parseFloat(transfer.fee_amount) || 0;
                 doc
                     .fontSize(10)
                     .fillColor('#666666')
                     .text('YOU SENT', 70, amountBoxY + 20)
                     .fontSize(24)
                     .fillColor('#7C3AED')
-                    .text(`${this.formatCurrency(transfer.sender_amount, transfer.sender_currency)}`, 70, amountBoxY + 35);
+                    .text(`${this.formatCurrency(senderAmount, transfer.sender_currency)}`, 70, amountBoxY + 35);
                 // Amount received
                 doc
                     .fontSize(10)
@@ -89,13 +92,16 @@ class InvoiceGeneratorService {
                     .text('RECIPIENT RECEIVES', 320, amountBoxY + 20)
                     .fontSize(24)
                     .fillColor('#10B981')
-                    .text(`${this.formatCurrency(transfer.recipient_expected_amount, transfer.recipient_currency)}`, 320, amountBoxY + 35);
+                    .text(`${this.formatCurrency(recipientAmount, transfer.recipient_currency)}`, 320, amountBoxY + 35);
                 // Exchange rate and fee
+                const exchangeRate = typeof transfer.exchange_rate === 'number'
+                    ? transfer.exchange_rate
+                    : parseFloat(transfer.exchange_rate) || 0;
                 doc
                     .fontSize(9)
                     .fillColor('#666666')
-                    .text(`Exchange Rate: 1 ${transfer.sender_currency} = ${transfer.exchange_rate.toFixed(4)} ${transfer.recipient_currency}`, 70, amountBoxY + 75)
-                    .text(`Fee (${transfer.fee_percentage}%): ${this.formatCurrency(transfer.fee_amount, transfer.sender_currency)}`, 70, amountBoxY + 90);
+                    .text(`Exchange Rate: 1 ${transfer.sender_currency} = ${exchangeRate.toFixed(4)} ${transfer.recipient_currency}`, 70, amountBoxY + 75)
+                    .text(`Fee (${transfer.fee_percentage}%): ${this.formatCurrency(feeAmount, transfer.sender_currency)}`, 70, amountBoxY + 90);
                 // Blockchain Details
                 if (transfer.ada_amount || transfer.mock_token) {
                     doc
@@ -104,12 +110,15 @@ class InvoiceGeneratorService {
                         .text('Blockchain Details', 50, 490);
                     let blockchainY = 515;
                     if (transfer.ada_amount) {
+                        const adaAmount = typeof transfer.ada_amount === 'number'
+                            ? transfer.ada_amount
+                            : parseFloat(transfer.ada_amount) || 0;
                         doc
                             .fontSize(10)
                             .fillColor('#666666')
                             .text('mockADA Used:', 50, blockchainY)
                             .fillColor('#000000')
-                            .text(`${transfer.ada_amount.toFixed(2)} mockADA`, 180, blockchainY);
+                            .text(`${adaAmount.toFixed(2)} mockADA`, 180, blockchainY);
                         blockchainY += 20;
                     }
                     if (transfer.mock_token) {
@@ -131,7 +140,8 @@ class InvoiceGeneratorService {
                             .text(transfer.tx_hash, 180, blockchainY, { width: 350 });
                         blockchainY += 25;
                     }
-                    if (transfer.blockchain_tx_url) {
+                    // Only show blockchain explorer link if not in mock mode (mock URLs won't work)
+                    if (transfer.blockchain_tx_url && !transfer.blockchain_tx_url.includes('mock')) {
                         doc
                             .fontSize(9)
                             .fillColor('#666666')
@@ -196,13 +206,12 @@ class InvoiceGeneratorService {
     static async saveInvoiceToFile(transfer, outputDir) {
         const buffer = await this.generateInvoice(transfer);
         const fileName = `TrustBridge-Invoice-${transfer.id}.pdf`;
-        const filePath = path_1.default.join(outputDir, fileName);
+        const filePath = path.join(outputDir, fileName);
         // Ensure directory exists
-        if (!fs_1.default.existsSync(outputDir)) {
-            fs_1.default.mkdirSync(outputDir, { recursive: true });
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
         }
-        fs_1.default.writeFileSync(filePath, buffer);
+        fs.writeFileSync(filePath, buffer);
         return filePath;
     }
 }
-exports.InvoiceGeneratorService = InvoiceGeneratorService;

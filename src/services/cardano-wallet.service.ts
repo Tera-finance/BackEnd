@@ -1,4 +1,4 @@
-import { config } from '../utils/config';
+import { config } from '../utils/config.js';
 import * as fs from 'fs';
 import * as path from 'path';
 

@@ -1,7 +1,7 @@
 import { Router, Response } from 'express';
-import { TransactionService } from '../services/transaction.service';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { apiRateLimit } from '../middleware/rateLimit';
+import { TransactionService } from '../services/transaction.service.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { apiRateLimit } from '../middleware/rateLimit.js';
 
 const router = Router();
 const transactionService = new TransactionService();

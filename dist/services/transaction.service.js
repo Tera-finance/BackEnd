@@ -1,16 +1,14 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransactionService = void 0;
-const uuid_1 = require("uuid");
-const database_1 = require("../utils/database");
-const exchange_service_1 = require("./exchange.service");
-class TransactionService {
+import { v4 as uuidv4 } from 'uuid';
+import { query, queryOne } from '../utils/database.js';
+import { ExchangeService } from './exchange.service.js';
+import { TransferRepository } from '../repositories/transfer.repository.js';
+export class TransactionService {
     constructor() {
-        this.exchangeService = new exchange_service_1.ExchangeService();
+        this.exchangeService = new ExchangeService();
     }
     async createTransaction(senderId, recipientPhone, sourceCurrency, targetCurrency, sourceAmount, recipientBankAccount) {
         try {
-            const sender = await (0, database_1.queryOne)('SELECT * FROM users WHERE id = ?', [senderId]);
+            const sender = await queryOne('SELECT * FROM users WHERE id = ?', [senderId]);
             if (!sender) {
                 throw new Error('Sender not found');
             }
@@ -19,8 +17,8 @@ class TransactionService {
             }
             // Calculate transfer amounts and fees
             const calculation = await this.exchangeService.calculateTransferAmount(sourceAmount, sourceCurrency, targetCurrency);
-            const transactionId = (0, uuid_1.v4)();
-            await (0, database_1.query)(`INSERT INTO transactions 
+            const transactionId = uuidv4();
+            await query(`INSERT INTO transactions 
          (id, sender_id, recipient_phone, source_currency, target_currency, 
           source_amount, target_amount, exchange_rate, fee_amount, total_amount, 
           status, recipient_bank_account) 
@@ -37,7 +35,7 @@ class TransactionService {
                 calculation.totalAmount,
                 recipientBankAccount
             ]);
-            const transaction = await (0, database_1.queryOne)('SELECT * FROM transactions WHERE id = ?', [transactionId]);
+            const transaction = await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
             if (!transaction) {
                 throw new Error('Failed to create transaction');
             }
@@ -49,10 +47,10 @@ class TransactionService {
         }
     }
     async getTransactionById(transactionId) {
-        return await (0, database_1.queryOne)('SELECT * FROM transactions WHERE id = ?', [transactionId]);
+        return await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
     }
     async getTransactionsByUser(userId, limit = 10) {
-        return await (0, database_1.query)('SELECT * FROM transactions WHERE sender_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
+        return await query('SELECT * FROM transactions WHERE sender_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
     }
     async updateTransactionStatus(transactionId, status, blockchainTxHash) {
         const updates = ['status = ?'];
@@ -65,8 +63,8 @@ class TransactionService {
             updates.push('completed_at = NOW()');
         }
         params.push(transactionId);
-        await (0, database_1.query)(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ?`, params);
-        const transaction = await (0, database_1.queryOne)('SELECT * FROM transactions WHERE id = ?', [transactionId]);
+        await query(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ?`, params);
+        const transaction = await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
         if (!transaction) {
             throw new Error('Transaction not found');
         }
@@ -79,18 +77,36 @@ class TransactionService {
         return await this.updateTransactionStatus(transactionId, 'FAILED');
     }
     async getTransactionHistory(userId, limit = 20) {
-        return await (0, database_1.query)(`SELECT * FROM transactions 
-       WHERE sender_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT ?`, [userId, limit]);
+        // Use TransferRepository to get transfers (new system)
+        const transfers = await TransferRepository.findByUserId(userId, limit);
+        // Map Transfer objects to a format similar to Transaction
+        return transfers.map(transfer => ({
+            id: transfer.id,
+            sender_id: transfer.user_id,
+            recipient_name: transfer.recipient_name,
+            source_currency: transfer.sender_currency,
+            target_currency: transfer.recipient_currency,
+            source_amount: transfer.sender_amount,
+            target_amount: transfer.recipient_expected_amount,
+            exchange_rate: transfer.exchange_rate,
+            fee_amount: transfer.fee_amount,
+            total_amount: transfer.total_amount,
+            status: transfer.status.toUpperCase(),
+            payment_method: transfer.payment_method,
+            blockchain_tx_hash: transfer.tx_hash,
+            blockchain_tx_url: transfer.blockchain_tx_url,
+            created_at: transfer.created_at,
+            completed_at: transfer.completed_at
+        }));
     }
     async getTransactionStats(userId) {
-        const stats = await (0, database_1.queryOne)(`SELECT 
+        // Use transfers table instead of transactions table
+        const stats = await queryOne(`SELECT
         COUNT(*) as totalTransactions,
-        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completedTransactions,
-        SUM(CASE WHEN status = 'COMPLETED' THEN total_amount ELSE 0 END) as totalAmount
-       FROM transactions 
-       WHERE sender_id = ?`, [userId]);
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedTransactions,
+        SUM(CASE WHEN status = 'completed' THEN total_amount ELSE 0 END) as totalAmount
+       FROM transfers
+       WHERE user_id = ?`, [userId]);
         return {
             totalTransactions: stats?.totalTransactions || 0,
             completedTransactions: stats?.completedTransactions || 0,
@@ -98,4 +114,3 @@ class TransactionService {
         };
     }
 }
-exports.TransactionService = TransactionService;

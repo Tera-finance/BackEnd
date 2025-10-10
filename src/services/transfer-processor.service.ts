@@ -1,7 +1,7 @@
-import { TransferRepository, Transfer } from '../repositories/transfer.repository';
-import { CardanoActionsService } from './cardano-actions.service';
-import { exchangeRateService } from './exchange-rate-api.service';
-import { getMockToken } from '../config/currencies.config';
+import { TransferRepository, Transfer } from '../repositories/transfer.repository.js';
+import { CardanoActionsService } from './cardano-actions.service.js';
+import { exchangeRateService } from './exchange-rate-api.service.js';
+import { getMockToken } from '../config/currencies.config.js';
 
 /**
  * Transfer Processor Service
@@ -25,6 +25,8 @@ export class TransferProcessorService {
   /**
    * Main orchestration function - processes transfer through blockchain
    * Runs asynchronously in background after transfer is created
+   *
+   * OPTIMIZED: Directly mints recipient token, skipping intermediate mockADA swap
    */
   async processTransfer(transferId: string): Promise<void> {
     console.log(`\n🚀 Starting blockchain processing for transfer ${transferId}`);
@@ -36,76 +38,70 @@ export class TransferProcessorService {
         throw new Error(`Transfer ${transferId} not found`);
       }
 
-      if (transfer.status !== 'pending') {
+      // Only process transfers that are pending or paid (waiting for blockchain processing)
+      if (transfer.status !== 'pending' && transfer.status !== 'paid') {
         console.log(`⚠️  Transfer ${transferId} already processed (status: ${transfer.status})`);
         return;
       }
 
-      // Step 1: Calculate mockADA amount from source currency
-      const mockADAAmount = await this.calculateMockADAAmount(
-        transfer.sender_amount,
-        transfer.sender_currency
-      );
-
-      console.log(`💰 Calculated mockADA amount: ${mockADAAmount.toString()} (${Number(mockADAAmount) / 1_000_000} ADA)`);
-
-      // Step 2: Mint mockADA (hub token)
-      const mintResult = await this.mintMockADA(transfer, mockADAAmount);
-
-      if (!mintResult.success) {
-        throw new Error(`Failed to mint mockADA: ${mintResult.error}`);
-      }
-
-      console.log(`✅ Minted mockADA: ${mintResult.txHash}`);
-      console.log(`🔗 ${mintResult.cardanoscanUrl}`);
-
-      // Update transfer with mint info
-      await TransferRepository.updateStatus(transferId, 'processing', {
-        tx_hash: mintResult.txHash!,
-        blockchain_tx_url: mintResult.cardanoscanUrl
-      });
-
-      // Update ada_amount in database (need to add this to repository if not exists)
-      // For now, it's set during creation based on conversion details
-
-      // Step 3: Check if recipient currency has a mock token
+      // Check if recipient currency has a mock token
       const recipientMockToken = this.getRecipientMockToken(transfer.recipient_currency);
 
       if (recipientMockToken) {
-        console.log(`🔄 Swapping mockADA to ${recipientMockToken}...`);
+        // OPTIMIZED PATH: Directly mint recipient token
+        console.log(`🪙 Minting ${recipientMockToken} directly...`);
 
-        // Swap mockADA → recipient mock token
-        const swapResult = await this.swapMockADAToRecipient(
-          transfer,
-          mockADAAmount,
-          recipientMockToken
+        // Calculate recipient token amount from source currency
+        const recipientAmount = await this.calculateRecipientAmount(
+          transfer.sender_amount,
+          transfer.sender_currency,
+          transfer.recipient_currency
         );
 
-        if (swapResult && swapResult.success) {
-          console.log(`✅ Swap successful!`);
-          console.log(`   Burn TX: ${swapResult.burnTxHash}`);
-          console.log(`   Mint TX: ${swapResult.mintTxHash}`);
+        console.log(`💰 Calculated ${recipientMockToken} amount: ${recipientAmount.toString()} (${Number(recipientAmount) / 1_000_000} ${recipientMockToken})`);
 
-          // Update with swap transaction
-          await TransferRepository.updateStatus(transferId, 'completed', {
-            tx_hash: swapResult.mintTxHash, // Use mint tx as primary
-            blockchain_tx_url: `https://preprod.cardanoscan.io/transaction/${swapResult.mintTxHash}`
-          });
+        // Mint recipient token directly
+        const mintResult = await this.mintRecipientToken(transfer, recipientMockToken, recipientAmount);
 
-          console.log(`✅ Transfer ${transferId} completed with swap`);
-        } else {
-          // Swap failed, but mint succeeded - mark as processing
-          console.error(`❌ Swap failed: ${swapResult?.error}`);
-          console.log(`ℹ️  Transfer ${transferId} remains in 'processing' state`);
-          // Admin can retry swap manually
-          return;
+        if (!mintResult.success) {
+          throw new Error(`Failed to mint ${recipientMockToken}: ${mintResult.error}`);
         }
-      } else {
-        // No mock token for recipient currency - mark complete after mint
-        console.log(`ℹ️  No mock token for ${transfer.recipient_currency}, completing after mockADA mint`);
 
-        await TransferRepository.updateStatus(transferId, 'completed');
-        console.log(`✅ Transfer ${transferId} completed (mint only)`);
+        console.log(`✅ Minted ${recipientMockToken}: ${mintResult.txHash}`);
+        console.log(`🔗 ${mintResult.cardanoscanUrl}`);
+
+        // Mark transfer as completed
+        await TransferRepository.updateStatus(transferId, 'completed', {
+          tx_hash: mintResult.txHash!,
+          blockchain_tx_url: mintResult.cardanoscanUrl
+        });
+
+        console.log(`✅ Transfer ${transferId} completed (direct mint)`);
+
+      } else {
+        // No mock token - fallback to mockADA
+        console.log(`ℹ️  No mock token for ${transfer.recipient_currency}, minting mockADA...`);
+
+        const mockADAAmount = await this.calculateMockADAAmount(
+          transfer.sender_amount,
+          transfer.sender_currency
+        );
+
+        const mintResult = await this.mintMockADA(transfer, mockADAAmount);
+
+        if (!mintResult.success) {
+          throw new Error(`Failed to mint mockADA: ${mintResult.error}`);
+        }
+
+        console.log(`✅ Minted mockADA: ${mintResult.txHash}`);
+        console.log(`🔗 ${mintResult.cardanoscanUrl}`);
+
+        await TransferRepository.updateStatus(transferId, 'completed', {
+          tx_hash: mintResult.txHash!,
+          blockchain_tx_url: mintResult.cardanoscanUrl
+        });
+
+        console.log(`✅ Transfer ${transferId} completed (mockADA only)`);
       }
 
     } catch (error: any) {
@@ -162,7 +158,8 @@ export class TransferProcessorService {
   private async swapMockADAToRecipient(
     transfer: Transfer,
     mockADAAmount: bigint,
-    recipientMockToken: string
+    recipientMockToken: string,
+    mintTxHash: string
   ): Promise<{
     success: boolean;
     burnTxHash?: string;
@@ -193,7 +190,8 @@ export class TransferProcessorService {
         fromSymbol: 'ADA', // mockADA
         toSymbol: baseSymbol, // e.g., IDRX
         fromAmount: mockADAAmount.toString(),
-        exchangeRate: recipientAmount / adaAmountDecimal
+        exchangeRate: recipientAmount / adaAmountDecimal,
+        mintTxHash // Pass mint txHash to wait for confirmation
       });
 
       return {
@@ -271,6 +269,70 @@ export class TransferProcessorService {
    */
   private getRecipientMockToken(currencyCode: string): string | null {
     return getMockToken(currencyCode);
+  }
+
+  /**
+   * Calculate recipient token amount directly from source currency
+   * Skips intermediate mockADA conversion for faster processing
+   */
+  private async calculateRecipientAmount(
+    sourceAmount: number,
+    sourceCurrency: string,
+    targetCurrency: string
+  ): Promise<bigint> {
+    try {
+      // Direct conversion: Source Currency → Target Currency
+      const targetAmount = await exchangeRateService.convert(sourceAmount, sourceCurrency, targetCurrency);
+
+      // Convert to token units with 6 decimals
+      const tokenAmount = BigInt(Math.floor(targetAmount * 1_000_000));
+
+      return tokenAmount;
+    } catch (error: any) {
+      console.error(`Failed to calculate recipient amount:`, error.message);
+
+      // Fallback: Convert via ADA as intermediate
+      const adaAmount = await exchangeRateService.convertToADA(sourceAmount, sourceCurrency);
+      const targetAmount = await exchangeRateService.convertFromADA(adaAmount, targetCurrency);
+      return BigInt(Math.floor(targetAmount * 1_000_000));
+    }
+  }
+
+  /**
+   * Mint recipient token directly (optimized path)
+   * Replaces the old 3-step process: mint mockADA → burn mockADA → mint recipient
+   */
+  private async mintRecipientToken(
+    transfer: Transfer,
+    recipientMockToken: string,
+    amount: bigint
+  ): Promise<{
+    success: boolean;
+    txHash?: string;
+    cardanoscanUrl?: string;
+    error?: string;
+  }> {
+    try {
+      console.log(`\n🪙 Minting ${recipientMockToken}...`);
+      console.log(`   Source: ${transfer.sender_amount} ${transfer.sender_currency}`);
+      console.log(`   Amount: ${amount.toString()} (${Number(amount) / 1_000_000} ${recipientMockToken})`);
+
+      // Extract base symbol from mock token (e.g., mockIDRX → IDRX)
+      const baseSymbol = recipientMockToken.replace('mock', '');
+
+      const result = await this.cardanoService.mintToken({
+        symbol: baseSymbol,
+        amount: amount.toString(),
+      });
+
+      return result;
+    } catch (error: any) {
+      console.error(`Mint ${recipientMockToken} error:`, error.message);
+      return {
+        success: false,
+        error: error.message || `Failed to mint ${recipientMockToken}`
+      };
+    }
   }
 }
 

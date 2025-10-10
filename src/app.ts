@@ -1,23 +1,23 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import { config } from './utils/config';
+import { config } from './utils/config.js';
 
 // Import routes
-import authRoutes from './routes/auth.routes';
-import cardanoRoutes from './routes/cardano.routes';
-import exchangeRoutes from './routes/exchange.routes';
-import transferRoutes from './routes/transfer.routes';
-import transactionRoutes from './routes/transaction.routes';
+import authRoutes from './routes/auth.routes.js';
+import cardanoRoutes from './routes/cardano.routes.js';
+import exchangeRoutes from './routes/exchange.routes.js';
+import transferRoutes from './routes/transfer.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
 
 const app = express();
 
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
-    : ['http://localhost:3000', 'http://localhost:3001'],
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://trustbridge.izcy.tech', 'https://api-trustbridge.izcy.tech']
+    : true, // Allow all origins in development
   credentials: true
 }));
 

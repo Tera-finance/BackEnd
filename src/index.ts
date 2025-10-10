@@ -1,7 +1,7 @@
-import app from './app';
-import { config } from './utils/config';
-import { testConnection, closePool } from './utils/database';
-import { redis } from './utils/redis';
+import app from './app.js';
+import { config } from './utils/config.js';
+import { testConnection, closePool } from './utils/database.js';
+import { redis } from './utils/redis.js';
 
 async function startServer() {
   try {

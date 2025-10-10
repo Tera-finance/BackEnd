@@ -1,5 +1,5 @@
 import PDFDocument from 'pdfkit';
-import { Transfer } from '../repositories/transfer.repository';
+import { Transfer } from '../repositories/transfer.repository.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -81,6 +81,18 @@ export class InvoiceGeneratorService {
           .fillAndStroke('#F3F4F6', '#E5E7EB');
 
         // Amount sent
+        const senderAmount = typeof transfer.sender_amount === 'number'
+          ? transfer.sender_amount
+          : parseFloat(transfer.sender_amount as any) || 0;
+
+        const recipientAmount = typeof transfer.recipient_expected_amount === 'number'
+          ? transfer.recipient_expected_amount
+          : parseFloat(transfer.recipient_expected_amount as any) || 0;
+
+        const feeAmount = typeof transfer.fee_amount === 'number'
+          ? transfer.fee_amount
+          : parseFloat(transfer.fee_amount as any) || 0;
+
         doc
           .fontSize(10)
           .fillColor('#666666')
@@ -88,7 +100,7 @@ export class InvoiceGeneratorService {
           .fontSize(24)
           .fillColor('#7C3AED')
           .text(
-            `${this.formatCurrency(transfer.sender_amount, transfer.sender_currency)}`,
+            `${this.formatCurrency(senderAmount, transfer.sender_currency)}`,
             70,
             amountBoxY + 35
           );
@@ -101,17 +113,21 @@ export class InvoiceGeneratorService {
           .fontSize(24)
           .fillColor('#10B981')
           .text(
-            `${this.formatCurrency(transfer.recipient_expected_amount, transfer.recipient_currency)}`,
+            `${this.formatCurrency(recipientAmount, transfer.recipient_currency)}`,
             320,
             amountBoxY + 35
           );
 
         // Exchange rate and fee
+        const exchangeRate = typeof transfer.exchange_rate === 'number'
+          ? transfer.exchange_rate
+          : parseFloat(transfer.exchange_rate as any) || 0;
+
         doc
           .fontSize(9)
           .fillColor('#666666')
-          .text(`Exchange Rate: 1 ${transfer.sender_currency} = ${transfer.exchange_rate.toFixed(4)} ${transfer.recipient_currency}`, 70, amountBoxY + 75)
-          .text(`Fee (${transfer.fee_percentage}%): ${this.formatCurrency(transfer.fee_amount, transfer.sender_currency)}`, 70, amountBoxY + 90);
+          .text(`Exchange Rate: 1 ${transfer.sender_currency} = ${exchangeRate.toFixed(4)} ${transfer.recipient_currency}`, 70, amountBoxY + 75)
+          .text(`Fee (${transfer.fee_percentage}%): ${this.formatCurrency(feeAmount, transfer.sender_currency)}`, 70, amountBoxY + 90);
 
         // Blockchain Details
         if (transfer.ada_amount || transfer.mock_token) {
@@ -123,12 +139,16 @@ export class InvoiceGeneratorService {
           let blockchainY = 515;
 
           if (transfer.ada_amount) {
+            const adaAmount = typeof transfer.ada_amount === 'number'
+              ? transfer.ada_amount
+              : parseFloat(transfer.ada_amount as any) || 0;
+
             doc
               .fontSize(10)
               .fillColor('#666666')
               .text('mockADA Used:', 50, blockchainY)
               .fillColor('#000000')
-              .text(`${transfer.ada_amount.toFixed(2)} mockADA`, 180, blockchainY);
+              .text(`${adaAmount.toFixed(2)} mockADA`, 180, blockchainY);
             blockchainY += 20;
           }
 
@@ -153,7 +173,8 @@ export class InvoiceGeneratorService {
             blockchainY += 25;
           }
 
-          if (transfer.blockchain_tx_url) {
+          // Only show blockchain explorer link if not in mock mode (mock URLs won't work)
+          if (transfer.blockchain_tx_url && !transfer.blockchain_tx_url.includes('mock')) {
             doc
               .fontSize(9)
               .fillColor('#666666')

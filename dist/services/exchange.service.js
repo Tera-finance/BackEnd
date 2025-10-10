@@ -1,13 +1,7 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.ExchangeService = void 0;
-const axios_1 = __importDefault(require("axios"));
-const config_1 = require("../utils/config");
-const redis_1 = require("../utils/redis");
-class ExchangeService {
+import axios from 'axios';
+import { config } from '../utils/config.js';
+import { redis } from '../utils/redis.js';
+export class ExchangeService {
     constructor() {
         this.CACHE_DURATION = 60; // 1 minute cache
     }
@@ -15,14 +9,14 @@ class ExchangeService {
         try {
             const cacheKey = `exchange_rate:${fromCurrency}_${toCurrency}`;
             // Try to get from cache first
-            const cachedRate = await redis_1.redis.get(cacheKey);
+            const cachedRate = await redis.get(cacheKey);
             if (cachedRate) {
                 return JSON.parse(cachedRate);
             }
             // Fetch from exchange rate API
             const rate = await this.fetchExchangeRate(fromCurrency, toCurrency);
             // Cache the result
-            await redis_1.redis.setex(cacheKey, this.CACHE_DURATION, JSON.stringify(rate));
+            await redis.setex(cacheKey, this.CACHE_DURATION, JSON.stringify(rate));
             return rate;
         }
         catch (error) {
@@ -33,9 +27,9 @@ class ExchangeService {
     async fetchExchangeRate(fromCurrency, toCurrency) {
         try {
             // Use free exchange rate API or fallback to mock rates
-            if (config_1.config.exchange.apiUrl) {
+            if (config.exchange.apiUrl) {
                 try {
-                    const response = await axios_1.default.get(`${config_1.config.exchange.apiUrl}/${fromCurrency}`);
+                    const response = await axios.get(`${config.exchange.apiUrl}/${fromCurrency}`);
                     if (response.data && response.data.rates && response.data.rates[toCurrency]) {
                         return {
                             from: fromCurrency,
@@ -124,4 +118,3 @@ class ExchangeService {
         }
     }
 }
-exports.ExchangeService = ExchangeService;

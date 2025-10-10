@@ -1,45 +1,11 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cardanoActionsService = exports.CardanoActionsService = void 0;
-const config_1 = require("../utils/config");
-const fs = __importStar(require("fs"));
-const path = __importStar(require("path"));
-const cardanoRepo = __importStar(require("../repositories/cardano.repository"));
+import { config } from '../utils/config.js';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as cardanoRepo from '../repositories/cardano.repository.js';
+import { Lucid, Blockfrost, Data, Constr, validatorToScriptHash } from '@lucid-evolution/lucid';
 // Token name mapping for validators
 const TOKEN_INFO = {
+    'ADA': { validatorTitle: 'ada.mock_ada_policy.mint', tokenName: 'mockADA', decimals: 6 },
     'USDC': { validatorTitle: 'usdc.mock_usdc_policy.mint', tokenName: 'mockUSDC', decimals: 6 },
     'CNHT': { validatorTitle: 'cnht.mock_cnht_policy.mint', tokenName: 'mockCNHT', decimals: 6 },
     'EUROC': { validatorTitle: 'euroc.mock_euroc_policy.mint', tokenName: 'mockEUROC', decimals: 6 },
@@ -47,12 +13,12 @@ const TOKEN_INFO = {
     'JPYC': { validatorTitle: 'jpyc.mock_jpyc_policy.mint', tokenName: 'mockJPYC', decimals: 6 },
     'MXNT': { validatorTitle: 'mxnt.mock_mxnt_policy.mint', tokenName: 'mockMXNT', decimals: 6 }
 };
-class CardanoActionsService {
+export class CardanoActionsService {
     constructor() {
         this.mockMode = false;
         this.initialized = false;
-        // Load plutus.json from smart contracts directory
-        const plutusPath = path.join(process.cwd(), '..', 'Trustbridge-SmartContracts', 'plutus.json');
+        // Load plutus.json from backend directory
+        const plutusPath = path.join(process.cwd(), 'plutus.json');
         if (fs.existsSync(plutusPath)) {
             this.plutusJson = JSON.parse(fs.readFileSync(plutusPath, 'utf-8'));
             console.log('✅ Loaded plutus.json with', this.plutusJson.validators.length, 'validators');
@@ -66,24 +32,26 @@ class CardanoActionsService {
         if (this.initialized)
             return;
         try {
-            if (!config_1.config.cardano?.blockfrostApiKey || !config_1.config.cardano?.walletSeed) {
+            if (!config.cardano?.blockfrostApiKey || !config.cardano?.walletSeed) {
                 this.mockMode = true;
                 console.log('⚠️  Using mock mode (missing Blockfrost API key or wallet seed)');
                 this.initialized = true;
                 return;
             }
-            // Dynamic import for lucid-cardano
-            const { Lucid, Blockfrost } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
-            this.lucid = await Lucid.new(new Blockfrost(config_1.config.cardano.blockfrostUrl, config_1.config.cardano.blockfrostApiKey), config_1.config.cardano.network);
-            // Load wallet from seed
-            this.lucid.selectWalletFromSeed(config_1.config.cardano.walletSeed);
-            const address = await this.lucid.wallet.address();
+            // Initialize Lucid with Blockfrost provider (Lucid Evolution API)
+            this.lucid = await Lucid(new Blockfrost(config.cardano.blockfrostUrl, config.cardano.blockfrostApiKey), config.cardano.network);
+            // Load wallet from seed (Lucid Evolution API)
+            this.lucid.selectWallet.fromSeed(config.cardano.walletSeed);
+            const address = await this.lucid.wallet().address();
             console.log('✅ Cardano actions service initialized');
             console.log('📍 Wallet address:', address);
             this.initialized = true;
         }
         catch (error) {
-            console.error('⚠️  Cardano actions service error:', error.message);
+            console.error('⚠️  Cardano actions service initialization failed!');
+            console.error('Error:', error.message);
+            console.error('Stack:', error.stack);
+            console.log('Falling back to mock mode');
             this.mockMode = true;
             this.initialized = true;
         }
@@ -94,8 +62,8 @@ class CardanoActionsService {
     async mintToken(params) {
         await this.initializeLucid();
         if (this.mockMode) {
-            // Mock response for testing
-            const mockTxHash = '0x' + Math.random().toString(16).substring(2) + Math.random().toString(16).substring(2);
+            // Mock response for testing - generate realistic 64-char Cardano tx hash
+            const mockTxHash = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
             return {
                 success: true,
                 txHash: mockTxHash,
@@ -119,13 +87,12 @@ class CardanoActionsService {
             if (!validator) {
                 throw new Error(`Validator ${tokenInfo.validatorTitle} not found in plutus.json`);
             }
-            const lucidModule = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
-            const { Data, Constr } = lucidModule;
+            // Use PlutusV3 script (Lucid Evolution supports it!)
             const script = {
                 type: 'PlutusV3',
                 script: validator.compiledCode
             };
-            const policyId = this.lucid.utils.validatorToScriptHash(script);
+            const policyId = validatorToScriptHash(script);
             console.log('📋 Minting with Policy ID:', policyId);
             // Create mint redeemer - Mint constructor (index 0) with amount
             const mintAmount = BigInt(params.amount);
@@ -144,7 +111,7 @@ class CardanoActionsService {
             console.log('📤 Submitting transaction...');
             const txHash = await signedTx.submit();
             console.log('✅ Mint successful! TxHash:', txHash);
-            const recipientAddr = params.recipientAddress || await this.lucid.wallet.address();
+            const recipientAddr = params.recipientAddress || await this.lucid.wallet().address();
             // Save to database
             await cardanoRepo.saveMintTransaction({
                 policyId: token.policy_id,
@@ -175,8 +142,9 @@ class CardanoActionsService {
     async swapTokens(params) {
         await this.initializeLucid();
         if (this.mockMode) {
-            const mockBurnTx = '0x' + Math.random().toString(16).substring(2);
-            const mockMintTx = '0x' + Math.random().toString(16).substring(2);
+            // Generate realistic 64-char Cardano tx hashes
+            const mockBurnTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
+            const mockMintTx = Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
             const calculatedRate = params.exchangeRate || 15800;
             const toAmount = (BigInt(params.fromAmount) * BigInt(Math.floor(calculatedRate))).toString();
             return {
@@ -208,12 +176,11 @@ class CardanoActionsService {
             if (!fromValidator || !toValidator) {
                 throw new Error('Validators not found in plutus.json');
             }
-            const lucidModule = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
-            const { Data, Constr } = lucidModule;
+            // Use PlutusV3 scripts
             const fromScript = { type: 'PlutusV3', script: fromValidator.compiledCode };
             const toScript = { type: 'PlutusV3', script: toValidator.compiledCode };
-            const fromPolicyId = this.lucid.utils.validatorToScriptHash(fromScript);
-            const toPolicyId = this.lucid.utils.validatorToScriptHash(toScript);
+            const fromPolicyId = validatorToScriptHash(fromScript);
+            const toPolicyId = validatorToScriptHash(toScript);
             // Calculate exchange rate and amounts
             const exchangeRate = params.exchangeRate || 15800;
             const fromAmount = BigInt(params.fromAmount);
@@ -224,6 +191,16 @@ class CardanoActionsService {
             const fromTokenHex = Buffer.from(fromTokenInfo.tokenName, 'utf8').toString('hex');
             const fromAssetUnit = fromPolicyId + fromTokenHex;
             const burnRedeemer = Data.to(new Constr(1, [fromAmount])); // Burn constructor (index 1)
+            // Wait for mint transaction to be confirmed on-chain
+            if (params.mintTxHash) {
+                console.log('\n⏳ Waiting for mint transaction to be confirmed on-chain...');
+                await this.lucid.awaitTx(params.mintTxHash, 60000);
+                console.log('✅ Mint confirmed, proceeding with burn...');
+            }
+            else {
+                console.log('⚠️  No mint txHash provided, waiting 10 seconds...');
+                await new Promise(resolve => setTimeout(resolve, 10000));
+            }
             console.log('\n🔥 Burning', params.fromSymbol, '...');
             const burnTx = await this.lucid
                 .newTx()
@@ -233,9 +210,9 @@ class CardanoActionsService {
             const signedBurn = await burnTx.sign.withWallet().complete();
             const burnTxHash = await signedBurn.submit();
             console.log('✅ Burn successful:', burnTxHash);
-            // Wait for confirmation
+            // Wait for burn confirmation before minting new tokens
             console.log('⏳ Waiting for burn confirmation...');
-            await this.lucid.awaitTx(burnTxHash);
+            await this.lucid.awaitTx(burnTxHash, 60000); // 60 second timeout
             // Step 2: Mint destination token
             const toTokenHex = Buffer.from(toTokenInfo.tokenName, 'utf8').toString('hex');
             const toAssetUnit = toPolicyId + toTokenHex;
@@ -249,7 +226,7 @@ class CardanoActionsService {
             const signedMint = await mintTx.sign.withWallet().complete();
             const mintTxHash = await signedMint.submit();
             console.log('✅ Mint successful:', mintTxHash);
-            const walletAddress = await this.lucid.wallet.address();
+            const walletAddress = await this.lucid.wallet().address();
             // Save swap to database
             await cardanoRepo.saveSwapTransaction({
                 fromPolicyId: fromToken.policy_id,
@@ -289,5 +266,4 @@ class CardanoActionsService {
         return !this.mockMode && this.initialized;
     }
 }
-exports.CardanoActionsService = CardanoActionsService;
-exports.cardanoActionsService = new CardanoActionsService();
+export const cardanoActionsService = new CardanoActionsService();

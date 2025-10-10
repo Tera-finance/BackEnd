@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
-import { config } from '../utils/config';
+import { config } from '../utils/config.js';
 
 interface AuthRequest extends Request {
   user?: {

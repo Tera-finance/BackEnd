@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { config } from '../utils/config';
-import { redis } from '../utils/redis';
+import { config } from '../utils/config.js';
+import { redis } from '../utils/redis.js';
 
 export interface ExchangeRate {
   from: string;

@@ -1,13 +1,11 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const transaction_service_1 = require("../services/transaction.service");
-const auth_1 = require("../middleware/auth");
-const rateLimit_1 = require("../middleware/rateLimit");
-const router = (0, express_1.Router)();
-const transactionService = new transaction_service_1.TransactionService();
+import { Router } from 'express';
+import { TransactionService } from '../services/transaction.service.js';
+import { authenticate } from '../middleware/auth.js';
+import { apiRateLimit } from '../middleware/rateLimit.js';
+const router = Router();
+const transactionService = new TransactionService();
 // Get transaction history for authenticated user
-router.get('/history', auth_1.authenticate, rateLimit_1.apiRateLimit, async (req, res) => {
+router.get('/history', authenticate, apiRateLimit, async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
@@ -26,7 +24,7 @@ router.get('/history', auth_1.authenticate, rateLimit_1.apiRateLimit, async (req
     }
 });
 // Get transaction by ID
-router.get('/:id', auth_1.authenticate, rateLimit_1.apiRateLimit, async (req, res) => {
+router.get('/:id', authenticate, apiRateLimit, async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
@@ -50,7 +48,7 @@ router.get('/:id', auth_1.authenticate, rateLimit_1.apiRateLimit, async (req, re
     }
 });
 // Get transaction statistics
-router.get('/stats/summary', auth_1.authenticate, rateLimit_1.apiRateLimit, async (req, res) => {
+router.get('/stats/summary', authenticate, apiRateLimit, async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
@@ -66,4 +64,4 @@ router.get('/stats/summary', auth_1.authenticate, rateLimit_1.apiRateLimit, asyn
         res.status(500).json({ error: 'Failed to fetch transaction stats' });
     }
 });
-exports.default = router;
+export default router;

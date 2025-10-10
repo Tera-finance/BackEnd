@@ -1,4 +1,4 @@
-import { cardanoWalletService } from './cardano-wallet.service';
+import { cardanoWalletService } from './cardano-wallet.service.js';
 
 type Lucid = any;
 type UTxO = any;

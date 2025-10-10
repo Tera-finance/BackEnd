@@ -1,12 +1,10 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const exchange_rate_api_service_1 = require("../services/exchange-rate-api.service");
-const currencies_config_1 = require("../config/currencies.config");
-const transfer_repository_1 = require("../repositories/transfer.repository");
-const transfer_processor_service_1 = require("../services/transfer-processor.service");
-const invoice_generator_service_1 = require("../services/invoice-generator.service");
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { exchangeRateService } from '../services/exchange-rate-api.service.js';
+import { hasMockToken, getMockToken, getPolicyId, } from '../config/currencies.config.js';
+import { TransferRepository } from '../repositories/transfer.repository.js';
+import { transferProcessorService } from '../services/transfer-processor.service.js';
+import { InvoiceGeneratorService } from '../services/invoice-generator.service.js';
+const router = Router();
 /**
  * POST /api/transfer/initiate
  * Initiate a new transfer from WhatsApp bot or website
@@ -14,7 +12,10 @@ const router = (0, express_1.Router)();
  */
 router.post('/initiate', async (req, res) => {
     try {
-        const { paymentMethod, senderCurrency, senderAmount, recipientName, recipientCurrency, recipientBank, recipientAccount, cardDetails, // Only for MASTERCARD
+        const { transferId, // Optional: if provided, update existing transfer
+        paymentMethod, senderCurrency, senderAmount, recipientName, recipientCurrency, recipientBank, recipientAccount, cardDetails, // Only for MASTERCARD
+        walletTxHash, // For WALLET payment method
+        walletAddress, // For WALLET payment method
          } = req.body;
         // Validation
         if (!paymentMethod || !senderCurrency || !senderAmount ||
@@ -30,18 +31,23 @@ router.post('/initiate', async (req, res) => {
                 error: 'Card details required for Mastercard payments',
             });
         }
+        // Wallet tx hash is only required when UPDATING existing transfer
+        if (paymentMethod === 'WALLET' && transferId && !walletTxHash) {
+            return res.status(400).json({
+                success: false,
+                error: 'Wallet transaction hash required when updating WALLET transfer',
+            });
+        }
         // Get conversion details
-        const conversionDetails = await exchange_rate_api_service_1.exchangeRateService.getConversionDetails(parseFloat(senderAmount), senderCurrency, recipientCurrency);
+        const conversionDetails = await exchangeRateService.getConversionDetails(parseFloat(senderAmount), senderCurrency, recipientCurrency);
         // Calculate fees
         const feePercentage = paymentMethod === 'MASTERCARD' ? 1.5 : 1.0;
         const feeAmount = (parseFloat(senderAmount) * feePercentage) / 100;
         const totalAmount = parseFloat(senderAmount) + feeAmount;
         // Determine conversion path
-        const mockToken = (0, currencies_config_1.getMockToken)(recipientCurrency);
-        const usesMockToken = (0, currencies_config_1.hasMockToken)(recipientCurrency);
-        const policyId = mockToken ? (0, currencies_config_1.getPolicyId)(mockToken) : null;
-        // Create transfer record (save to database)
-        const transferId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const mockToken = getMockToken(recipientCurrency);
+        const usesMockToken = hasMockToken(recipientCurrency);
+        const policyId = mockToken ? getPolicyId(mockToken) : null;
         // Get user info from auth header if available
         let userId = null;
         let whatsappNumber = req.body.whatsappNumber || 'unknown';
@@ -51,13 +57,68 @@ router.post('/initiate', async (req, res) => {
             userId = authReq.user.id;
             whatsappNumber = authReq.user.whatsapp_number || whatsappNumber;
         }
+        // If transferId provided, this is an update (user completed wallet payment)
+        if (transferId) {
+            // Update existing transfer with wallet transaction hash
+            const existingTransfer = await TransferRepository.findById(transferId);
+            if (!existingTransfer) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Transfer not found',
+                });
+            }
+            // Update transfer with wallet transaction details
+            await TransferRepository.updateStatus(transferId, 'paid', {
+                tx_hash: walletTxHash,
+            });
+            // Get updated transfer
+            const transfer = await TransferRepository.findById(transferId);
+            // Build response data
+            const transferData = {
+                id: transfer.id,
+                status: transfer.status,
+                paymentMethod: transfer.payment_method,
+                sender: {
+                    currency: transfer.sender_currency,
+                    amount: transfer.sender_amount,
+                    totalAmount: transfer.total_amount,
+                },
+                recipient: {
+                    name: transfer.recipient_name,
+                    currency: transfer.recipient_currency,
+                    expectedAmount: transfer.recipient_expected_amount,
+                    bank: transfer.recipient_bank,
+                    account: transfer.recipient_account,
+                },
+                blockchain: {
+                    txHash: transfer.tx_hash,
+                },
+            };
+            res.json({
+                success: true,
+                data: transferData,
+                message: 'Transfer updated successfully. Blockchain processing started.',
+            });
+            // Trigger blockchain processing in background
+            setImmediate(async () => {
+                try {
+                    console.log(`\n🔗 Triggering blockchain processing for ${transfer.id}...`);
+                    await transferProcessorService.processTransfer(transfer.id);
+                }
+                catch (error) {
+                    console.error(`Background processing error for ${transfer.id}:`, error.message);
+                }
+            });
+            return;
+        }
         // Generate payment link for WALLET method
+        const newTransferId = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const paymentLink = paymentMethod === 'WALLET'
-            ? `https://payment.trustbridge.io/${transferId}`
+            ? `https://payment.trustbridge.io/${newTransferId}`
             : undefined;
         // Save transfer to database
-        const transfer = await transfer_repository_1.TransferRepository.create({
-            id: transferId,
+        const transfer = await TransferRepository.create({
+            id: newTransferId,
             user_id: userId,
             whatsapp_number: whatsappNumber,
             payment_method: paymentMethod,
@@ -118,22 +179,26 @@ router.post('/initiate', async (req, res) => {
         res.json({
             success: true,
             data: transferData,
-            message: 'Transfer initiated successfully. Blockchain processing started.',
+            message: paymentMethod === 'WALLET'
+                ? 'Transfer created. Waiting for wallet payment.'
+                : 'Transfer initiated successfully. Blockchain processing started.',
         });
-        // Trigger blockchain processing in background (non-blocking)
-        // This will:
-        // 1. Mint mockADA (hub token) from source currency
-        // 2. Swap mockADA to recipient mock token (if available)
-        // 3. Update transfer status with transaction hashes
-        setImmediate(async () => {
-            try {
-                console.log(`\n🔗 Triggering blockchain processing for ${transfer.id}...`);
-                await transfer_processor_service_1.transferProcessorService.processTransfer(transfer.id);
-            }
-            catch (error) {
-                console.error(`Background processing error for ${transfer.id}:`, error.message);
-            }
-        });
+        // Only trigger blockchain processing for non-WALLET payments
+        // For WALLET payments, processing starts when user sends tokens (transferId provided in update)
+        if (paymentMethod !== 'WALLET') {
+            setImmediate(async () => {
+                try {
+                    console.log(`\n🔗 Triggering blockchain processing for ${transfer.id}...`);
+                    await transferProcessorService.processTransfer(transfer.id);
+                }
+                catch (error) {
+                    console.error(`Background processing error for ${transfer.id}:`, error.message);
+                }
+            });
+        }
+        else {
+            console.log(`💳 WALLET transfer ${transfer.id} created. Waiting for user payment...`);
+        }
     }
     catch (error) {
         res.status(500).json({
@@ -189,7 +254,7 @@ router.get('/status/:transferId', async (req, res) => {
     try {
         const { transferId } = req.params;
         // Retrieve from database
-        const transfer = await transfer_repository_1.TransferRepository.findById(transferId);
+        const transfer = await TransferRepository.findById(transferId);
         if (!transfer) {
             return res.status(404).json({
                 success: false,
@@ -236,7 +301,7 @@ router.post('/:transferId/status', async (req, res) => {
                 error: `Invalid status. Must be one of: ${validStatuses.join(', ')}`,
             });
         }
-        const transfer = await transfer_repository_1.TransferRepository.updateStatus(transferId, status, { tx_hash, blockchain_tx_url });
+        const transfer = await TransferRepository.updateStatus(transferId, status, { tx_hash, blockchain_tx_url });
         res.json({
             success: true,
             data: {
@@ -262,7 +327,7 @@ router.get('/details/:transferId', async (req, res) => {
     try {
         const { transferId } = req.params;
         // Retrieve from database
-        const transfer = await transfer_repository_1.TransferRepository.findById(transferId);
+        const transfer = await TransferRepository.findById(transferId);
         if (!transfer) {
             return res.status(404).json({
                 success: false,
@@ -340,14 +405,14 @@ router.get('/history', async (req, res) => {
         let transfers = [];
         // Retrieve from database
         if (userId) {
-            transfers = await transfer_repository_1.TransferRepository.findByUserId(userId, parseInt(limit));
+            transfers = await TransferRepository.findByUserId(userId, parseInt(limit));
         }
         else if (whatsappNumber) {
-            transfers = await transfer_repository_1.TransferRepository.findByWhatsAppNumber(whatsappNumber, parseInt(limit));
+            transfers = await TransferRepository.findByWhatsAppNumber(whatsappNumber, parseInt(limit));
         }
         else {
             // Get recent transfers (for admin view)
-            transfers = await transfer_repository_1.TransferRepository.getRecent(parseInt(limit));
+            transfers = await TransferRepository.getRecent(parseInt(limit));
         }
         // Apply filters
         if (status) {
@@ -427,7 +492,7 @@ router.post('/calculate', async (req, res) => {
                 error: 'Missing required fields',
             });
         }
-        const details = await exchange_rate_api_service_1.exchangeRateService.getConversionDetails(parseFloat(amount), senderCurrency, recipientCurrency);
+        const details = await exchangeRateService.getConversionDetails(parseFloat(amount), senderCurrency, recipientCurrency);
         const feePercentage = paymentMethod === 'MASTERCARD' ? 1.5 : 1.0;
         const feeAmount = (parseFloat(amount) * feePercentage) / 100;
         const totalAmount = parseFloat(amount) + feeAmount;
@@ -463,7 +528,7 @@ router.get('/invoice/:transferId', async (req, res) => {
     try {
         const { transferId } = req.params;
         // Get transfer from database
-        const transfer = await transfer_repository_1.TransferRepository.findById(transferId);
+        const transfer = await TransferRepository.findById(transferId);
         if (!transfer) {
             return res.status(404).json({
                 success: false,
@@ -471,7 +536,7 @@ router.get('/invoice/:transferId', async (req, res) => {
             });
         }
         // Generate PDF invoice
-        const pdfBuffer = await invoice_generator_service_1.InvoiceGeneratorService.generateInvoice(transfer);
+        const pdfBuffer = await InvoiceGeneratorService.generateInvoice(transfer);
         // Set headers for PDF download
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename=TrustBridge-Invoice-${transferId}.pdf`);
@@ -487,4 +552,4 @@ router.get('/invoice/:transferId', async (req, res) => {
         });
     }
 });
-exports.default = router;
+export default router;

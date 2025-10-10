@@ -6,8 +6,8 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { saveDeployedToken } from '../src/repositories/cardano.repository';
-import { closePool } from '../src/utils/database';
+import { saveDeployedToken } from '../src/repositories/cardano.repository.js';
+import { closePool } from '../src/utils/database.js';
 
 interface DeploymentInfo {
   timestamp: string;
@@ -94,6 +94,7 @@ async function importDeployment() {
  */
 function getTokenConfig(tokenName: string): { symbol: string; decimals: number } {
   const configs: Record<string, { symbol: string; decimals: number }> = {
+    'mockADA': { symbol: 'ADA', decimals: 6 },
     'mockUSDC': { symbol: 'USDC', decimals: 6 },
     'mockCNHT': { symbol: 'CNHT', decimals: 6 },
     'mockEUROC': { symbol: 'EUROC', decimals: 6 },

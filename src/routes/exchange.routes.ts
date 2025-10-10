@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { exchangeRateService } from '../services/exchange-rate-api.service';
+import { exchangeRateService } from '../services/exchange-rate-api.service.js';
 import { 
   MASTERCARD_CURRENCIES, 
   WALLET_CURRENCIES, 
@@ -7,7 +7,7 @@ import {
   getCurrencyByCode,
   hasMockToken,
   getMockToken,
-} from '../config/currencies.config';
+} from '../config/currencies.config.js';
 
 const router = Router();
 

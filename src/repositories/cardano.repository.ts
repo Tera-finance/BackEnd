@@ -1,4 +1,4 @@
-import { query, queryOne, CardanoToken, CardanoMint, CardanoSwap } from '../utils/database';
+import { query, queryOne, CardanoToken, CardanoMint, CardanoSwap } from '../utils/database.js';
 
 /**
  * Repository for managing Cardano blockchain data

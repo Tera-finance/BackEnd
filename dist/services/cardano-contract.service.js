@@ -1,64 +1,28 @@
-"use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.cardanoContractService = exports.CardanoContractService = void 0;
-const cardano_wallet_service_1 = require("./cardano-wallet.service");
+import { cardanoWalletService } from './cardano-wallet.service.js';
 /**
  * Cardano Smart Contract Service
  * Handles interaction with Plutus smart contracts on Cardano
  */
-class CardanoContractService {
+export class CardanoContractService {
     constructor() {
         // Lucid will be loaded lazily
     }
     async ensureLucid() {
         if (!this.lucid) {
-            this.lucid = cardano_wallet_service_1.cardanoWalletService.getLucidInstance();
+            this.lucid = cardanoWalletService.getLucidInstance();
         }
     }
     /**
      * Get backend's public key hash to share with smart contract
      */
     async getBackendPublicKeyHash() {
-        return await cardano_wallet_service_1.cardanoWalletService.getBackendPublicKeyHash();
+        return await cardanoWalletService.getBackendPublicKeyHash();
     }
     /**
      * Get backend's address to receive payments from smart contract
      */
     async getBackendAddress() {
-        return await cardano_wallet_service_1.cardanoWalletService.getBackendAddress();
+        return await cardanoWalletService.getBackendAddress();
     }
     /**
      * Lock funds in a smart contract
@@ -72,7 +36,7 @@ class CardanoContractService {
             throw new Error('Cardano wallet service not initialized');
         }
         try {
-            const { Data } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
+            const { Data } = await import('lucid-cardano');
             // Convert datum to Plutus data format
             const datumData = Data.to(datum);
             // Build transaction
@@ -105,7 +69,7 @@ class CardanoContractService {
             throw new Error('Cardano wallet service not initialized');
         }
         try {
-            const { Data } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
+            const { Data } = await import('lucid-cardano');
             const redeemerData = Data.to(redeemer);
             // Build transaction to spend from script
             const tx = await this.lucid
@@ -172,7 +136,7 @@ class CardanoContractService {
             throw new Error('Cardano wallet service not initialized');
         }
         try {
-            const { Data } = await Promise.resolve().then(() => __importStar(require('lucid-cardano')));
+            const { Data } = await import('lucid-cardano');
             const datumData = Data.to(datum);
             // Build transaction but don't sign
             const tx = await this.lucid
@@ -255,5 +219,4 @@ class CardanoContractService {
         }
     }
 }
-exports.CardanoContractService = CardanoContractService;
-exports.cardanoContractService = new CardanoContractService();
+export const cardanoContractService = new CardanoContractService();

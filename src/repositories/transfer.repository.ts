@@ -1,5 +1,5 @@
-import { query, queryOne } from '../utils/database';
-import { EncryptionUtil } from '../utils/encryption';
+import { query, queryOne } from '../utils/database.js';
+import { EncryptionUtil } from '../utils/encryption.js';
 
 export interface Transfer {
   id: string;

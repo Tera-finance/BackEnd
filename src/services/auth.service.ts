@@ -1,8 +1,8 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { config } from '../utils/config';
-import { query, queryOne, User } from '../utils/database';
-import { redis } from '../utils/redis';
+import { config } from '../utils/config.js';
+import { query, queryOne, User } from '../utils/database.js';
+import { redis } from '../utils/redis.js';
 
 export class AuthService {
   static generateTokens(user: User) {

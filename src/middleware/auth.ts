@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { config } from '../utils/config';
-import { queryOne, User } from '../utils/database';
+import { config } from '../utils/config.js';
+import { queryOne, User } from '../utils/database.js';
 
 export interface AuthRequest extends Request {
   user?: {

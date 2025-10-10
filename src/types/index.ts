@@ -1,5 +1,5 @@
 // Re-export database types from our database module
-export { User, Transaction, CardanoToken, CardanoMint, CardanoSwap } from '../utils/database';
+export { User, Transaction, CardanoToken, CardanoMint, CardanoSwap } from '../utils/database.js';
 
 // Define enums that were previously from Prisma
 export type UserStatus = 'PENDING_KYC' | 'VERIFIED' | 'SUSPENDED';

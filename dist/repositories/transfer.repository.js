@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransferRepository = void 0;
-const database_1 = require("../utils/database");
-const encryption_1 = require("../utils/encryption");
-class TransferRepository {
+import { query, queryOne } from '../utils/database.js';
+import { EncryptionUtil } from '../utils/encryption.js';
+export class TransferRepository {
     /**
      * Create a new transfer record
      */
@@ -13,10 +10,10 @@ class TransferRepository {
             let card_last4 = null;
             // Encrypt card number if provided (MASTERCARD payment)
             if (data.card_number) {
-                card_number_encrypted = encryption_1.EncryptionUtil.encrypt(data.card_number);
+                card_number_encrypted = EncryptionUtil.encrypt(data.card_number);
                 card_last4 = data.card_number.slice(-4);
             }
-            await (0, database_1.query)(`INSERT INTO transfers (
+            await query(`INSERT INTO transfers (
           id, user_id, whatsapp_number, status, payment_method,
           sender_currency, sender_amount, total_amount,
           recipient_name, recipient_currency, recipient_expected_amount,
@@ -65,19 +62,19 @@ class TransferRepository {
      * Find transfer by ID
      */
     static async findById(id) {
-        return await (0, database_1.queryOne)('SELECT * FROM transfers WHERE id = ?', [id]);
+        return await queryOne('SELECT * FROM transfers WHERE id = ?', [id]);
     }
     /**
      * Find transfers by WhatsApp number
      */
     static async findByWhatsAppNumber(whatsappNumber, limit = 20) {
-        return await (0, database_1.query)('SELECT * FROM transfers WHERE whatsapp_number = ? ORDER BY created_at DESC LIMIT ?', [whatsappNumber, limit]);
+        return await query('SELECT * FROM transfers WHERE whatsapp_number = ? ORDER BY created_at DESC LIMIT ?', [whatsappNumber, limit]);
     }
     /**
      * Find transfers by user ID
      */
     static async findByUserId(userId, limit = 20) {
-        return await (0, database_1.query)('SELECT * FROM transfers WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
+        return await query('SELECT * FROM transfers WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
     }
     /**
      * Update transfer status
@@ -100,7 +97,7 @@ class TransferRepository {
             params.push(additionalData.blockchain_tx_url);
         }
         params.push(id);
-        await (0, database_1.query)(`UPDATE transfers SET ${updates.join(', ')} WHERE id = ?`, params);
+        await query(`UPDATE transfers SET ${updates.join(', ')} WHERE id = ?`, params);
         const transfer = await this.findById(id);
         if (!transfer) {
             throw new Error('Transfer not found after update');
@@ -111,7 +108,7 @@ class TransferRepository {
      * Update transfer with blockchain transaction hash
      */
     static async updateBlockchainTx(id, txHash, blockchainTxUrl) {
-        await (0, database_1.query)('UPDATE transfers SET tx_hash = ?, blockchain_tx_url = ? WHERE id = ?', [txHash, blockchainTxUrl || null, id]);
+        await query('UPDATE transfers SET tx_hash = ?, blockchain_tx_url = ? WHERE id = ?', [txHash, blockchainTxUrl || null, id]);
         const transfer = await this.findById(id);
         if (!transfer) {
             throw new Error('Transfer not found');
@@ -122,7 +119,7 @@ class TransferRepository {
      * Get transfer statistics for a user
      */
     static async getStats(userId) {
-        const stats = await (0, database_1.queryOne)(`SELECT
+        const stats = await queryOne(`SELECT
         COUNT(*) as total_transfers,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_transfers,
         SUM(CASE WHEN status = 'completed' THEN sender_amount ELSE 0 END) as total_amount_sent,
@@ -140,13 +137,13 @@ class TransferRepository {
      * Get recent transfers (for admin/monitoring)
      */
     static async getRecent(limit = 50) {
-        return await (0, database_1.query)('SELECT * FROM transfers ORDER BY created_at DESC LIMIT ?', [limit]);
+        return await query('SELECT * FROM transfers ORDER BY created_at DESC LIMIT ?', [limit]);
     }
     /**
      * Get transfers by status
      */
     static async findByStatus(status, limit = 50) {
-        return await (0, database_1.query)('SELECT * FROM transfers WHERE status = ? ORDER BY created_at DESC LIMIT ?', [status, limit]);
+        return await query('SELECT * FROM transfers WHERE status = ? ORDER BY created_at DESC LIMIT ?', [status, limit]);
     }
     /**
      * Cancel a transfer
@@ -182,4 +179,3 @@ class TransferRepository {
         return await this.updateStatus(id, 'failed');
     }
 }
-exports.TransferRepository = TransferRepository;

@@ -1,11 +1,5 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.redis = void 0;
-const ioredis_1 = __importDefault(require("ioredis"));
-const config_1 = require("./config");
+import Redis from 'ioredis';
+import { config } from './config.js';
 // Mock Redis for development if Redis is not available
 class MockRedis {
     constructor() {
@@ -49,13 +43,13 @@ class MockRedis {
 }
 let redis;
 // Always start with mock in development
-if (config_1.config.nodeEnv === 'development') {
-    exports.redis = redis = new MockRedis();
+if (config.nodeEnv === 'development') {
+    redis = new MockRedis();
     console.log('⚠️  Using mock Redis (development mode)');
 }
 else {
     try {
-        exports.redis = redis = new ioredis_1.default(config_1.config.redis.url, {
+        redis = new Redis(config.redis.url, {
             enableReadyCheck: false,
             maxRetriesPerRequest: 1,
             lazyConnect: true,
@@ -64,7 +58,7 @@ else {
         });
         redis.on('error', (error) => {
             console.warn('Redis connection error, falling back to mock:', error.message);
-            exports.redis = redis = new MockRedis();
+            redis = new MockRedis();
         });
         redis.on('connect', () => {
             console.log('✅ Connected to Redis');
@@ -72,6 +66,7 @@ else {
     }
     catch (error) {
         console.warn('Redis not available, using in-memory mock');
-        exports.redis = redis = new MockRedis();
+        redis = new MockRedis();
     }
 }
+export { redis };

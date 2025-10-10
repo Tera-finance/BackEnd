@@ -1,9 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const express_1 = require("express");
-const exchange_rate_api_service_1 = require("../services/exchange-rate-api.service");
-const currencies_config_1 = require("../config/currencies.config");
-const router = (0, express_1.Router)();
+import { Router } from 'express';
+import { exchangeRateService } from '../services/exchange-rate-api.service.js';
+import { MASTERCARD_CURRENCIES, WALLET_CURRENCIES, RECIPIENT_CURRENCIES, getCurrencyByCode, hasMockToken, getMockToken, } from '../config/currencies.config.js';
+const router = Router();
 /**
  * GET /api/exchange/currencies
  * Get all supported currencies categorized by payment method
@@ -13,9 +11,9 @@ router.get('/currencies', async (req, res) => {
         res.json({
             success: true,
             data: {
-                mastercard: currencies_config_1.MASTERCARD_CURRENCIES,
-                wallet: currencies_config_1.WALLET_CURRENCIES,
-                recipient: currencies_config_1.RECIPIENT_CURRENCIES,
+                mastercard: MASTERCARD_CURRENCIES,
+                wallet: WALLET_CURRENCIES,
+                recipient: RECIPIENT_CURRENCIES,
             },
         });
     }
@@ -40,7 +38,7 @@ router.get('/rate', async (req, res) => {
                 error: 'Missing required parameters: from, to',
             });
         }
-        const rate = await exchange_rate_api_service_1.exchangeRateService.getExchangeRate(from, to);
+        const rate = await exchangeRateService.getExchangeRate(from, to);
         res.json({
             success: true,
             data: {
@@ -72,8 +70,8 @@ router.post('/convert', async (req, res) => {
                 error: 'Missing required fields: amount, from, to',
             });
         }
-        const convertedAmount = await exchange_rate_api_service_1.exchangeRateService.convert(parseFloat(amount), from, to);
-        const rate = await exchange_rate_api_service_1.exchangeRateService.getExchangeRate(from, to);
+        const convertedAmount = await exchangeRateService.convert(parseFloat(amount), from, to);
+        const rate = await exchangeRateService.getExchangeRate(from, to);
         res.json({
             success: true,
             data: {
@@ -108,26 +106,26 @@ router.post('/quote', async (req, res) => {
             });
         }
         // Get conversion details
-        const details = await exchange_rate_api_service_1.exchangeRateService.getConversionDetails(parseFloat(amount), senderCurrency, recipientCurrency);
+        const details = await exchangeRateService.getConversionDetails(parseFloat(amount), senderCurrency, recipientCurrency);
         // Calculate fees (1.5% for mastercard, 1% for wallet)
         const feePercentage = paymentMethod === 'MASTERCARD' ? 1.5 : 1.0;
         const feeAmount = (parseFloat(amount) * feePercentage) / 100;
         const totalAmount = parseFloat(amount) + feeAmount;
         // Check if mock token is available
-        const mockToken = (0, currencies_config_1.getMockToken)(recipientCurrency);
-        const usesMockToken = (0, currencies_config_1.hasMockToken)(recipientCurrency);
+        const mockToken = getMockToken(recipientCurrency);
+        const usesMockToken = hasMockToken(recipientCurrency);
         res.json({
             success: true,
             data: {
                 sender: {
                     currency: senderCurrency,
                     amount: parseFloat(amount),
-                    symbol: (0, currencies_config_1.getCurrencyByCode)(senderCurrency)?.symbol || '',
+                    symbol: getCurrencyByCode(senderCurrency)?.symbol || '',
                 },
                 recipient: {
                     currency: recipientCurrency,
                     amount: details.finalAmount,
-                    symbol: (0, currencies_config_1.getCurrencyByCode)(recipientCurrency)?.symbol || '',
+                    symbol: getCurrencyByCode(recipientCurrency)?.symbol || '',
                 },
                 conversion: {
                     adaAmount: details.adaAmount,
@@ -160,7 +158,7 @@ router.post('/quote', async (req, res) => {
  */
 router.get('/ada-price', async (req, res) => {
     try {
-        const prices = await exchange_rate_api_service_1.exchangeRateService.getADAPrices();
+        const prices = await exchangeRateService.getADAPrices();
         res.json({
             success: true,
             data: {
@@ -183,7 +181,7 @@ router.get('/ada-price', async (req, res) => {
 router.get('/crypto-price/:symbol', async (req, res) => {
     try {
         const { symbol } = req.params;
-        const price = await exchange_rate_api_service_1.exchangeRateService.getCryptoPrice(symbol);
+        const price = await exchangeRateService.getCryptoPrice(symbol);
         res.json({
             success: true,
             data: {
@@ -207,7 +205,7 @@ router.get('/crypto-price/:symbol', async (req, res) => {
  */
 router.post('/clear-cache', async (req, res) => {
     try {
-        exchange_rate_api_service_1.exchangeRateService.clearCache();
+        exchangeRateService.clearCache();
         res.json({
             success: true,
             message: 'Cache cleared successfully',
@@ -221,4 +219,4 @@ router.post('/clear-cache', async (req, res) => {
         });
     }
 });
-exports.default = router;
+export default router;

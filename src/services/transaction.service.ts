@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
-import { query, queryOne, Transaction, User } from '../utils/database';
-import { ExchangeService } from './exchange.service';
+import { query, queryOne, Transaction, User } from '../utils/database.js';
+import { ExchangeService } from './exchange.service.js';
+import { TransferRepository } from '../repositories/transfer.repository.js';
 
 export class TransactionService {
   private exchangeService: ExchangeService;
@@ -134,14 +135,29 @@ export class TransactionService {
     return await this.updateTransactionStatus(transactionId, 'FAILED');
   }
 
-  async getTransactionHistory(userId: string, limit = 20): Promise<Transaction[]> {
-    return await query<Transaction>(
-      `SELECT * FROM transactions 
-       WHERE sender_id = ? 
-       ORDER BY created_at DESC 
-       LIMIT ?`,
-      [userId, limit]
-    );
+  async getTransactionHistory(userId: string, limit = 20): Promise<any[]> {
+    // Use TransferRepository to get transfers (new system)
+    const transfers = await TransferRepository.findByUserId(userId, limit);
+
+    // Map Transfer objects to a format similar to Transaction
+    return transfers.map(transfer => ({
+      id: transfer.id,
+      sender_id: transfer.user_id,
+      recipient_name: transfer.recipient_name,
+      source_currency: transfer.sender_currency,
+      target_currency: transfer.recipient_currency,
+      source_amount: transfer.sender_amount,
+      target_amount: transfer.recipient_expected_amount,
+      exchange_rate: transfer.exchange_rate,
+      fee_amount: transfer.fee_amount,
+      total_amount: transfer.total_amount,
+      status: transfer.status.toUpperCase(),
+      payment_method: transfer.payment_method,
+      blockchain_tx_hash: transfer.tx_hash,
+      blockchain_tx_url: transfer.blockchain_tx_url,
+      created_at: transfer.created_at,
+      completed_at: transfer.completed_at
+    }));
   }
 
   async getTransactionStats(userId: string): Promise<{
@@ -149,13 +165,14 @@ export class TransactionService {
     completedTransactions: number;
     totalAmount: number;
   }> {
+    // Use transfers table instead of transactions table
     const stats = await queryOne<any>(
-      `SELECT 
+      `SELECT
         COUNT(*) as totalTransactions,
-        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completedTransactions,
-        SUM(CASE WHEN status = 'COMPLETED' THEN total_amount ELSE 0 END) as totalAmount
-       FROM transactions 
-       WHERE sender_id = ?`,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedTransactions,
+        SUM(CASE WHEN status = 'completed' THEN total_amount ELSE 0 END) as totalAmount
+       FROM transfers
+       WHERE user_id = ?`,
       [userId]
     );
 

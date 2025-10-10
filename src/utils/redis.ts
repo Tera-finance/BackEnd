@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { config } from './config';
+import { config } from './config.js';
 
 // Mock Redis for development if Redis is not available
 class MockRedis {

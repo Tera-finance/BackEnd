@@ -1,13 +1,6 @@
-"use strict";
 // Supported currencies configuration for TrustBridge global remittance
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.MOCK_TOKEN_POLICIES = exports.MOCK_TOKEN_MAPPING = exports.RECIPIENT_CURRENCIES = exports.WALLET_CURRENCIES = exports.MASTERCARD_CURRENCIES = void 0;
-exports.getCurrencyByCode = getCurrencyByCode;
-exports.hasMockToken = hasMockToken;
-exports.getMockToken = getMockToken;
-exports.getPolicyId = getPolicyId;
 // Mastercard supported fiat currencies
-exports.MASTERCARD_CURRENCIES = [
+export const MASTERCARD_CURRENCIES = [
     { code: 'USD', name: 'US Dollar', symbol: '$', flag: '🇺🇸', type: 'fiat' },
     { code: 'EUR', name: 'Euro', symbol: '€', flag: '🇪🇺', type: 'fiat' },
     { code: 'GBP', name: 'British Pound', symbol: '£', flag: '🇬🇧', type: 'fiat' },
@@ -20,7 +13,7 @@ exports.MASTERCARD_CURRENCIES = [
     { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', flag: '🇸🇬', type: 'fiat' },
 ];
 // Wallet/Crypto supported currencies
-exports.WALLET_CURRENCIES = [
+export const WALLET_CURRENCIES = [
     { code: 'ADA', name: 'Cardano', symbol: '₳', type: 'crypto', decimals: 6 },
     { code: 'USDT', name: 'Tether', symbol: '₮', type: 'crypto', decimals: 6 },
     { code: 'USDC', name: 'USD Coin', symbol: 'USDC', type: 'crypto', decimals: 6 },
@@ -32,7 +25,7 @@ exports.WALLET_CURRENCIES = [
     { code: 'mockIDRX', name: 'Mock IDR Token', symbol: 'mIDRX', type: 'mock', decimals: 6 },
 ];
 // Recipient bank payout currencies
-exports.RECIPIENT_CURRENCIES = [
+export const RECIPIENT_CURRENCIES = [
     // Asia Pacific
     { code: 'IDR', name: 'Indonesian Rupiah', symbol: 'Rp', flag: '🇮🇩', region: 'APAC', mockToken: 'mockIDRX' },
     { code: 'PHP', name: 'Philippine Peso', symbol: '₱', flag: '🇵🇭', region: 'APAC' },
@@ -61,7 +54,7 @@ exports.RECIPIENT_CURRENCIES = [
     { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', flag: '🇦🇪', region: 'Middle East' },
 ];
 // Mock token mapping
-exports.MOCK_TOKEN_MAPPING = {
+export const MOCK_TOKEN_MAPPING = {
     'USD': 'mockUSDC',
     'EUR': 'mockEUROC',
     'CNY': 'mockCNHT',
@@ -70,7 +63,7 @@ exports.MOCK_TOKEN_MAPPING = {
     'IDR': 'mockIDRX',
 };
 // Policy IDs for deployed mock tokens (from plutus.json)
-exports.MOCK_TOKEN_POLICIES = {
+export const MOCK_TOKEN_POLICIES = {
     'mockUSDC': '4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d',
     'mockCNHT': 'c7bdad55621e968c6ccb0967493808c9ab50601b3b9aec77b2ba6888',
     'mockEUROC': 'f766f151787a989166869375f4c57cfa36c533241033c8000a5481c1',
@@ -79,20 +72,20 @@ exports.MOCK_TOKEN_POLICIES = {
     'mockMXNT': 'c73682653bd1ff615e54a3d79c00068e1f4977a7a9628f39add50dc3',
 };
 // Helper functions
-function getCurrencyByCode(code) {
+export function getCurrencyByCode(code) {
     const allCurrencies = [
-        ...exports.MASTERCARD_CURRENCIES,
-        ...exports.WALLET_CURRENCIES,
-        ...exports.RECIPIENT_CURRENCIES,
+        ...MASTERCARD_CURRENCIES,
+        ...WALLET_CURRENCIES,
+        ...RECIPIENT_CURRENCIES,
     ];
     return allCurrencies.find(c => c.code === code);
 }
-function hasMockToken(currencyCode) {
-    return currencyCode in exports.MOCK_TOKEN_MAPPING;
+export function hasMockToken(currencyCode) {
+    return currencyCode in MOCK_TOKEN_MAPPING;
 }
-function getMockToken(currencyCode) {
-    return exports.MOCK_TOKEN_MAPPING[currencyCode] || null;
+export function getMockToken(currencyCode) {
+    return MOCK_TOKEN_MAPPING[currencyCode] || null;
 }
-function getPolicyId(mockToken) {
-    return exports.MOCK_TOKEN_POLICIES[mockToken] || null;
+export function getPolicyId(mockToken) {
+    return MOCK_TOKEN_POLICIES[mockToken] || null;
 }

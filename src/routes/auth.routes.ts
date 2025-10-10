@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { AuthService } from '../services/auth.service';
-import { authenticate, AuthRequest } from '../middleware/auth';
-import { apiRateLimit } from '../middleware/rateLimit';
-import { queryOne, User } from '../utils/database';
+import { AuthService } from '../services/auth.service.js';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { apiRateLimit } from '../middleware/rateLimit.js';
+import { queryOne, User } from '../utils/database.js';
 
 const router = Router();
 
