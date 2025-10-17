@@ -248,25 +248,28 @@ router.get('/invoice/:transferId', authenticate, async (req: Request, res: Respo
       });
     }
 
-    // Generate PDF invoice (ensure all numbers are properly parsed)
+    // Database returns snake_case fields, need to map to camelCase
+    const dbTransfer = transfer as any;
+
+    // Generate PDF invoice (ensure all numbers are properly parsed from string DECIMAL values)
     const invoiceBuffer = await InvoiceService.generateInvoice({
-      transferId: transfer.id,
-      date: transfer.createdAt,
-      senderAmount: typeof transfer.senderAmount === 'string' ? parseFloat(transfer.senderAmount) : transfer.senderAmount,
-      senderCurrency: transfer.senderCurrency,
-      recipientAmount: typeof transfer.recipientExpectedAmount === 'string' ? parseFloat(transfer.recipientExpectedAmount) : transfer.recipientExpectedAmount,
-      recipientCurrency: transfer.recipientCurrency,
-      recipientName: transfer.recipientName,
-      recipientBank: transfer.recipientBank,
-      recipientAccount: transfer.recipientAccount,
-      exchangeRate: typeof transfer.exchangeRate === 'string' ? parseFloat(transfer.exchangeRate) : transfer.exchangeRate,
-      feeAmount: typeof transfer.feeAmount === 'string' ? parseFloat(transfer.feeAmount) : transfer.feeAmount,
-      feePercentage: typeof transfer.feePercentage === 'string' ? parseFloat(transfer.feePercentage) : transfer.feePercentage,
-      totalAmount: typeof transfer.totalAmount === 'string' ? parseFloat(transfer.totalAmount) : transfer.totalAmount,
-      status: transfer.status,
-      txHash: transfer.txHash || undefined,
-      blockchainTxUrl: transfer.blockchainTxUrl || undefined,
-      whatsappNumber: transfer.whatsappNumber
+      transferId: dbTransfer.id,
+      date: dbTransfer.created_at,
+      senderAmount: dbTransfer.sender_amount,
+      senderCurrency: dbTransfer.sender_currency,
+      recipientAmount: dbTransfer.recipient_expected_amount,
+      recipientCurrency: dbTransfer.recipient_currency,
+      recipientName: dbTransfer.recipient_name,
+      recipientBank: dbTransfer.recipient_bank,
+      recipientAccount: dbTransfer.recipient_account,
+      exchangeRate: dbTransfer.exchange_rate,
+      feeAmount: dbTransfer.fee_amount,
+      feePercentage: dbTransfer.fee_percentage,
+      totalAmount: dbTransfer.total_amount,
+      status: dbTransfer.status,
+      txHash: dbTransfer.tx_hash || undefined,
+      blockchainTxUrl: dbTransfer.blockchain_tx_url || undefined,
+      whatsappNumber: dbTransfer.whatsapp_number
     });
 
     // Set response headers for PDF download
