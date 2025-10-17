@@ -1,6 +1,10 @@
 node_modules
 /src/generated/prisma
+dist
 
 .env
+.env.local
+.env.production
 .env.example
 .cardano-wallet.json
+vercel-env-template.txt
