@@ -4,11 +4,15 @@ import helmet from 'helmet';
 import { config } from './utils/config.js';
 // Import routes
 import authRoutes from './routes/auth.routes.js';
-import blockchainRoutes from './routes/blockchain.routes.js';
+import blockchainRoutes from './routes/blockchain.routes.simple.js';
 import exchangeRoutes from './routes/exchange.routes.js';
 import transferRoutes from './routes/transfer.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
 const app = express();
+// Simple test endpoint before any middleware
+app.get('/ping', (req, res) => {
+    res.send('pong');
+});
 // Security middleware
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }

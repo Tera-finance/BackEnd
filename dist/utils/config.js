@@ -9,7 +9,8 @@ export const config = {
         port: parseInt(process.env.DB_PORT || '3306'),
         user: process.env.DB_USER || 'trustbridge',
         password: process.env.DB_PASSWORD || '',
-        name: process.env.DB_NAME || 'trustbridge'
+        name: process.env.DB_NAME || 'trustbridge',
+        ssl: process.env.DB_SSL === 'true'
     },
     // Redis Cache
     redis: {

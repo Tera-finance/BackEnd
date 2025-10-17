@@ -33,19 +33,32 @@ const ERC20_ABI = parseAbi([
 ]);
 class BlockchainService {
     constructor() {
-        // Initialize public client for reading blockchain data
+        // Initialize public client for reading blockchain data with timeouts
         this.publicClient = createPublicClient({
             chain: baseSepolia,
-            transport: http(config.blockchain.rpcUrl)
+            transport: http(config.blockchain.rpcUrl, {
+                timeout: 10000, // 10 second timeout
+                retryCount: 2,
+                retryDelay: 1000
+            })
         });
         // Initialize wallet client only if private key is available
         if (config.blockchain.privateKey) {
-            this.account = privateKeyToAccount(config.blockchain.privateKey);
-            this.walletClient = createWalletClient({
-                account: this.account,
-                chain: baseSepolia,
-                transport: http(config.blockchain.rpcUrl)
-            });
+            try {
+                this.account = privateKeyToAccount(config.blockchain.privateKey);
+                this.walletClient = createWalletClient({
+                    account: this.account,
+                    chain: baseSepolia,
+                    transport: http(config.blockchain.rpcUrl, {
+                        timeout: 10000,
+                        retryCount: 2,
+                        retryDelay: 1000
+                    })
+                });
+            }
+            catch (error) {
+                console.warn('⚠️  Failed to initialize wallet client:', error);
+            }
         }
     }
     // ==================== WALLET OPERATIONS ====================
@@ -60,11 +73,17 @@ class BlockchainService {
         if (!targetAddress) {
             throw new Error('No address provided');
         }
-        const balance = await this.publicClient.getBalance({ address: targetAddress });
-        return {
-            native: balance.toString(),
-            formatted: formatUnits(balance, 18) // ETH has 18 decimals
-        };
+        try {
+            const balance = await this.publicClient.getBalance({ address: targetAddress });
+            return {
+                native: balance.toString(),
+                formatted: formatUnits(balance, 18) // ETH has 18 decimals
+            };
+        }
+        catch (error) {
+            console.error('Error getting balance:', error.message);
+            throw new Error(`Failed to get balance: ${error.message}`);
+        }
     }
     // ==================== TOKEN OPERATIONS ====================
     async getTokenBalance(tokenAddress, walletAddress) {
@@ -90,24 +109,30 @@ class BlockchainService {
         };
     }
     async getTokenInfo(tokenAddress) {
-        const [name, symbol, decimals] = await Promise.all([
-            this.publicClient.readContract({
-                address: tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'name'
-            }),
-            this.publicClient.readContract({
-                address: tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'symbol'
-            }),
-            this.publicClient.readContract({
-                address: tokenAddress,
-                abi: ERC20_ABI,
-                functionName: 'decimals'
-            })
-        ]);
-        return { name, symbol, decimals };
+        try {
+            const [name, symbol, decimals] = await Promise.all([
+                this.publicClient.readContract({
+                    address: tokenAddress,
+                    abi: ERC20_ABI,
+                    functionName: 'name'
+                }),
+                this.publicClient.readContract({
+                    address: tokenAddress,
+                    abi: ERC20_ABI,
+                    functionName: 'symbol'
+                }),
+                this.publicClient.readContract({
+                    address: tokenAddress,
+                    abi: ERC20_ABI,
+                    functionName: 'decimals'
+                })
+            ]);
+            return { name, symbol, decimals };
+        }
+        catch (error) {
+            console.error('Error getting token info:', error.message);
+            throw new Error(`Failed to get token info: ${error.message}`);
+        }
     }
     // ==================== SWAP OPERATIONS ====================
     async estimateSwapOutput(amountIn) {
@@ -149,11 +174,23 @@ class BlockchainService {
     }
     // ==================== UTILITY METHODS ====================
     async getBlockNumber() {
-        return await this.publicClient.getBlockNumber();
+        try {
+            return await this.publicClient.getBlockNumber();
+        }
+        catch (error) {
+            console.error('Error getting block number:', error.message);
+            throw new Error(`Failed to get block number: ${error.message}`);
+        }
     }
     async getGasPrice() {
-        const gasPrice = await this.publicClient.getGasPrice();
-        return gasPrice.toString();
+        try {
+            const gasPrice = await this.publicClient.getGasPrice();
+            return gasPrice.toString();
+        }
+        catch (error) {
+            console.error('Error getting gas price:', error.message);
+            throw new Error(`Failed to get gas price: ${error.message}`);
+        }
     }
     isReady() {
         return this.walletClient !== undefined && this.account !== undefined;
@@ -165,5 +202,17 @@ class BlockchainService {
         return `${config.blockchain.explorerUrl}/address/${address}`;
     }
 }
-// Export singleton instance
-export const blockchainService = new BlockchainService();
+// Export class for lazy initialization
+let _blockchainService = null;
+export function getBlockchainService() {
+    if (!_blockchainService) {
+        _blockchainService = new BlockchainService();
+    }
+    return _blockchainService;
+}
+// Also export direct instance for backward compatibility (but use getter in routes)
+export const blockchainService = {
+    get instance() {
+        return getBlockchainService();
+    }
+};

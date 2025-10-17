@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
-import { blockchainService } from '../services/blockchain.service.js';
+import { getBlockchainService } from '../services/blockchain.service.js';
 import { config } from '../utils/config.js';
 const router = Router();
+// Lazy getter for blockchain service
+const getService = () => getBlockchainService();
 // ==================== BLOCKCHAIN INFO ENDPOINTS ====================
 /**
  * GET /api/blockchain/info
@@ -10,8 +12,9 @@ const router = Router();
  */
 router.get('/info', async (req, res) => {
     try {
-        const blockNumber = await blockchainService.getBlockNumber();
-        const gasPrice = await blockchainService.getGasPrice();
+        const service = getService();
+        const blockNumber = await service.getBlockNumber();
+        const gasPrice = await service.getGasPrice();
         res.json({
             success: true,
             data: {
@@ -21,7 +24,7 @@ router.get('/info', async (req, res) => {
                 explorerUrl: config.blockchain.explorerUrl,
                 blockNumber: blockNumber.toString(),
                 gasPrice: gasPrice,
-                isReady: blockchainService.isReady()
+                isReady: service.isReady()
             }
         });
     }

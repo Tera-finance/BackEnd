@@ -12,7 +12,12 @@ export const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 0,
+  ...(config.database.ssl && {
+    ssl: {
+      rejectUnauthorized: false // Set to false for Aiven's certificates
+    }
+  })
 });
 
 // Helper function to execute queries
