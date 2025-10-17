@@ -1,120 +1,177 @@
 import axios from 'axios';
+import NodeCache from 'node-cache';
 import { config } from '../utils/config.js';
-import { redis } from '../utils/redis.js';
+// Cache exchange rates for 5 minutes
+const rateCache = new NodeCache({ stdTTL: 300 });
+const SUPPORTED_CURRENCIES = [
+    { code: 'USD', symbol: '$', name: 'US Dollar', decimals: 2 },
+    { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah', decimals: 0 },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan', decimals: 2 },
+    { code: 'EUR', symbol: '€', name: 'Euro', decimals: 2 },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen', decimals: 0 },
+    { code: 'MXN', symbol: '$', name: 'Mexican Peso', decimals: 2 }
+];
+// Token to currency mapping
+const TOKEN_CURRENCY_MAP = {
+    'USDC': 'USD',
+    'IDRX': 'IDR',
+    'CNHT': 'CNY',
+    'EUROC': 'EUR',
+    'JPYC': 'JPY',
+    'MXNT': 'MXN'
+};
 export class ExchangeService {
-    constructor() {
-        this.CACHE_DURATION = 60; // 1 minute cache
+    /**
+     * Get all supported currencies
+     */
+    static getSupportedCurrencies() {
+        return SUPPORTED_CURRENCIES;
     }
-    async getExchangeRate(fromCurrency, toCurrency) {
+    /**
+     * Get currency info by code
+     */
+    static getCurrencyInfo(code) {
+        return SUPPORTED_CURRENCIES.find(c => c.code === code);
+    }
+    /**
+     * Get currency code from token symbol
+     */
+    static getCurrencyFromToken(tokenSymbol) {
+        return TOKEN_CURRENCY_MAP[tokenSymbol] || tokenSymbol;
+    }
+    /**
+     * Get token symbol from currency code
+     */
+    static getTokenFromCurrency(currencyCode) {
+        const entry = Object.entries(TOKEN_CURRENCY_MAP).find(([_, currency]) => currency === currencyCode);
+        return entry ? entry[0] : currencyCode;
+    }
+    /**
+     * Fetch exchange rate from external API
+     */
+    static async fetchExchangeRate(from, to) {
+        // Check cache first
+        const cacheKey = `${from}-${to}`;
+        const cached = rateCache.get(cacheKey);
+        if (cached) {
+            console.log(`📦 Using cached rate for ${from}/${to}: ${cached}`);
+            return cached;
+        }
         try {
-            const cacheKey = `exchange_rate:${fromCurrency}_${toCurrency}`;
-            // Try to get from cache first
-            const cachedRate = await redis.get(cacheKey);
-            if (cachedRate) {
-                return JSON.parse(cachedRate);
+            // If same currency, rate is 1
+            if (from === to) {
+                return 1;
             }
-            // Fetch from exchange rate API
-            const rate = await this.fetchExchangeRate(fromCurrency, toCurrency);
+            // Use exchangerate-api.com (free tier, no API key needed)
+            const url = `${config.exchange.apiUrl}/${from}`;
+            console.log(`🌐 Fetching exchange rate: ${url}`);
+            const response = await axios.get(url, { timeout: 5000 });
+            if (!response.data || !response.data.rates) {
+                throw new Error('Invalid response from exchange rate API');
+            }
+            const rate = response.data.rates[to];
+            if (!rate) {
+                throw new Error(`Exchange rate not found for ${from}/${to}`);
+            }
             // Cache the result
-            await redis.setex(cacheKey, this.CACHE_DURATION, JSON.stringify(rate));
+            rateCache.set(cacheKey, rate);
+            console.log(`✅ Fetched rate for ${from}/${to}: ${rate}`);
             return rate;
         }
         catch (error) {
-            console.error('Get exchange rate error:', error);
-            throw new Error('Failed to get exchange rate');
+            console.error(`❌ Error fetching exchange rate for ${from}/${to}:`, error.message);
+            // Return fallback rates based on approximate real-world values
+            const fallbackRates = this.getFallbackRate(from, to);
+            if (fallbackRates) {
+                console.log(`⚠️  Using fallback rate for ${from}/${to}: ${fallbackRates}`);
+                return fallbackRates;
+            }
+            throw new Error(`Failed to get exchange rate for ${from}/${to}`);
         }
     }
-    async fetchExchangeRate(fromCurrency, toCurrency) {
-        try {
-            // Use free exchange rate API or fallback to mock rates
-            if (config.exchange.apiUrl) {
+    /**
+     * Get fallback rates when API is unavailable
+     */
+    static getFallbackRate(from, to) {
+        // Approximate rates (as of late 2024)
+        const usdRates = {
+            'IDR': 15700,
+            'CNY': 7.24,
+            'EUR': 0.92,
+            'JPY': 149.50,
+            'MXN': 17.05,
+            'USD': 1
+        };
+        if (from === 'USD' && usdRates[to]) {
+            return usdRates[to];
+        }
+        if (to === 'USD' && usdRates[from]) {
+            return 1 / usdRates[from];
+        }
+        // Cross-rate calculation: from -> USD -> to
+        if (usdRates[from] && usdRates[to]) {
+            return usdRates[to] / usdRates[from];
+        }
+        return null;
+    }
+    /**
+     * Get all exchange rates for a base currency
+     */
+    static async getAllRates(baseCurrency = 'USD') {
+        const rates = {};
+        for (const currency of SUPPORTED_CURRENCIES) {
+            if (currency.code === baseCurrency) {
+                rates[currency.code] = 1;
+            }
+            else {
                 try {
-                    const response = await axios.get(`${config.exchange.apiUrl}/${fromCurrency}`);
-                    if (response.data && response.data.rates && response.data.rates[toCurrency]) {
-                        return {
-                            from: fromCurrency,
-                            to: toCurrency,
-                            rate: response.data.rates[toCurrency],
-                            timestamp: Date.now()
-                        };
-                    }
+                    rates[currency.code] = await this.fetchExchangeRate(baseCurrency, currency.code);
                 }
-                catch (apiError) {
-                    console.warn('Exchange rate API failed, using fallback rates:', apiError);
+                catch (error) {
+                    console.error(`Failed to fetch rate for ${currency.code}`);
+                    rates[currency.code] = 0;
                 }
             }
-            // Fallback mock rates for development/testing
-            const mockRates = {
-                'USD_IDR': 15000,
-                'USDC_IDR': 15000,
-                'USD_USDC': 1,
-                'IDR_USD': 1 / 15000,
-                'IDR_USDC': 1 / 15000,
-                'USDC_USD': 1
-            };
-            const rateKey = `${fromCurrency}_${toCurrency}`;
-            const rate = mockRates[rateKey] || 1;
-            return {
-                from: fromCurrency,
-                to: toCurrency,
-                rate: rate,
-                timestamp: Date.now()
-            };
         }
-        catch (error) {
-            console.error('Exchange rate fetch error:', error);
-            // Final fallback
-            return {
-                from: fromCurrency,
-                to: toCurrency,
-                rate: 1,
-                timestamp: Date.now()
-            };
-        }
+        return rates;
     }
-    async calculateTransferAmount(sourceAmount, fromCurrency, toCurrency, feePercentage = 0.01 // 1% default fee
-    ) {
-        try {
-            const rate = await this.getExchangeRate(fromCurrency, toCurrency);
-            const feeAmount = sourceAmount * feePercentage;
-            const amountAfterFee = sourceAmount - feeAmount;
-            const targetAmount = amountAfterFee * rate.rate;
-            const totalAmount = sourceAmount + feeAmount;
-            return {
-                sourceAmount,
-                targetAmount,
-                exchangeRate: rate.rate,
-                feeAmount,
-                totalAmount
-            };
-        }
-        catch (error) {
-            console.error('Calculate transfer amount error:', error);
-            throw new Error('Failed to calculate transfer amount');
-        }
+    /**
+     * Calculate conversion amount
+     */
+    static async convertAmount(amount, fromCurrency, toCurrency) {
+        const rate = await this.fetchExchangeRate(fromCurrency, toCurrency);
+        const convertedAmount = amount * rate;
+        return {
+            convertedAmount,
+            rate
+        };
     }
-    async getSupportedCurrencies() {
-        return ['USDC', 'USDT', 'USD', 'IDR'];
+    /**
+     * Calculate transfer quote with fees
+     */
+    static async getTransferQuote(senderCurrency, recipientCurrency, amount, feePercentage = 1.5) {
+        // Get exchange rate
+        const { rate, convertedAmount } = await this.convertAmount(amount, senderCurrency, recipientCurrency);
+        // Calculate fee
+        const feeAmount = amount * (feePercentage / 100);
+        const totalAmount = amount + feeAmount;
+        // Get corresponding token symbols
+        const senderToken = this.getTokenFromCurrency(senderCurrency);
+        const recipientToken = this.getTokenFromCurrency(recipientCurrency);
+        return {
+            senderAmount: amount,
+            recipientAmount: convertedAmount,
+            exchangeRate: rate,
+            feeAmount,
+            totalAmount,
+            senderToken,
+            recipientToken
+        };
     }
-    async getHistoricalRates(fromCurrency, toCurrency, days = 7) {
-        try {
-            // Mock historical data for now
-            const rates = [];
-            const baseRate = 15000; // Base USDC to IDR rate
-            for (let i = days - 1; i >= 0; i--) {
-                const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
-                rates.push({
-                    from: fromCurrency,
-                    to: toCurrency,
-                    rate: baseRate * (1 + variation),
-                    timestamp: Date.now() - (i * 24 * 60 * 60 * 1000)
-                });
-            }
-            return rates;
-        }
-        catch (error) {
-            console.error('Get historical rates error:', error);
-            throw new Error('Failed to get historical rates');
-        }
+    /**
+     * Clear rate cache (for testing)
+     */
+    static clearCache() {
+        rateCache.flushAll();
     }
 }

@@ -1,116 +1,134 @@
-import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne } from '../utils/database.js';
-import { ExchangeService } from './exchange.service.js';
-import { TransferRepository } from '../repositories/transfer.repository.js';
 export class TransactionService {
-    constructor() {
-        this.exchangeService = new ExchangeService();
+    /**
+     * Get transaction history for a user
+     */
+    static async getTransactionHistory(userId, limit = 20, offset = 0) {
+        const results = await query(`SELECT * FROM transactions
+       WHERE sender_id = ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`, [userId, limit, offset]);
+        return results;
     }
-    async createTransaction(senderId, recipientPhone, sourceCurrency, targetCurrency, sourceAmount, recipientBankAccount) {
-        try {
-            const sender = await queryOne('SELECT * FROM users WHERE id = ?', [senderId]);
-            if (!sender) {
-                throw new Error('Sender not found');
-            }
-            if (sender.status !== 'VERIFIED') {
-                throw new Error('Sender must be KYC verified');
-            }
-            // Calculate transfer amounts and fees
-            const calculation = await this.exchangeService.calculateTransferAmount(sourceAmount, sourceCurrency, targetCurrency);
-            const transactionId = uuidv4();
-            await query(`INSERT INTO transactions 
-         (id, sender_id, recipient_phone, source_currency, target_currency, 
-          source_amount, target_amount, exchange_rate, fee_amount, total_amount, 
-          status, recipient_bank_account) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?)`, [
-                transactionId,
-                senderId,
-                recipientPhone,
-                sourceCurrency,
-                targetCurrency,
-                calculation.sourceAmount,
-                calculation.targetAmount,
-                calculation.exchangeRate,
-                calculation.feeAmount,
-                calculation.totalAmount,
-                recipientBankAccount
-            ]);
-            const transaction = await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
-            if (!transaction) {
-                throw new Error('Failed to create transaction');
-            }
-            return transaction;
-        }
-        catch (error) {
-            console.error('Error creating transaction:', error);
-            throw error;
-        }
+    /**
+     * Get transaction by ID
+     */
+    static async getTransactionById(transactionId) {
+        const result = await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
+        return result;
     }
-    async getTransactionById(transactionId) {
-        return await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
+    /**
+     * Get transaction by blockchain hash
+     */
+    static async getTransactionByHash(txHash) {
+        const result = await queryOne('SELECT * FROM transactions WHERE blockchain_tx_hash = ?', [txHash]);
+        return result;
     }
-    async getTransactionsByUser(userId, limit = 10) {
-        return await query('SELECT * FROM transactions WHERE sender_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
+    /**
+     * Get swap history for a user
+     */
+    static async getSwapHistory(userId, limit = 20, offset = 0) {
+        const results = await query(`SELECT * FROM evm_swaps
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`, [userId, limit, offset]);
+        return results;
     }
-    async updateTransactionStatus(transactionId, status, blockchainTxHash) {
-        const updates = ['status = ?'];
-        const params = [status];
-        if (blockchainTxHash) {
-            updates.push('blockchain_tx_hash = ?');
-            params.push(blockchainTxHash);
-        }
-        if (status === 'COMPLETED') {
-            updates.push('completed_at = NOW()');
-        }
-        params.push(transactionId);
-        await query(`UPDATE transactions SET ${updates.join(', ')} WHERE id = ?`, params);
-        const transaction = await queryOne('SELECT * FROM transactions WHERE id = ?', [transactionId]);
-        if (!transaction) {
-            throw new Error('Transaction not found');
-        }
-        return transaction;
+    /**
+     * Get all recent swaps
+     */
+    static async getRecentSwaps(limit = 50) {
+        const results = await query(`SELECT * FROM evm_swaps
+       ORDER BY created_at DESC
+       LIMIT ?`, [limit]);
+        return results;
     }
-    async completeTransaction(transactionId, blockchainTxHash) {
-        return await this.updateTransactionStatus(transactionId, 'COMPLETED', blockchainTxHash);
+    /**
+     * Get swap by transaction hash
+     */
+    static async getSwapByHash(txHash) {
+        const result = await queryOne('SELECT * FROM evm_swaps WHERE tx_hash = ?', [txHash]);
+        return result;
     }
-    async failTransaction(transactionId) {
-        return await this.updateTransactionStatus(transactionId, 'FAILED');
+    /**
+     * Get swaps for a specific transfer
+     */
+    static async getSwapsForTransfer(transferId) {
+        const results = await query(`SELECT * FROM evm_swaps
+       WHERE transfer_id = ?
+       ORDER BY created_at ASC`, [transferId]);
+        return results;
     }
-    async getTransactionHistory(userId, limit = 20) {
-        // Use TransferRepository to get transfers (new system)
-        const transfers = await TransferRepository.findByUserId(userId, limit);
-        // Map Transfer objects to a format similar to Transaction
-        return transfers.map(transfer => ({
-            id: transfer.id,
-            sender_id: transfer.user_id,
-            recipient_name: transfer.recipient_name,
-            source_currency: transfer.sender_currency,
-            target_currency: transfer.recipient_currency,
-            source_amount: transfer.sender_amount,
-            target_amount: transfer.recipient_expected_amount,
-            exchange_rate: transfer.exchange_rate,
-            fee_amount: transfer.fee_amount,
-            total_amount: transfer.total_amount,
-            status: transfer.status.toUpperCase(),
-            payment_method: transfer.payment_method,
-            blockchain_tx_hash: transfer.tx_hash,
-            blockchain_tx_url: transfer.blockchain_tx_url,
-            created_at: transfer.created_at,
-            completed_at: transfer.completed_at
-        }));
-    }
-    async getTransactionStats(userId) {
-        // Use transfers table instead of transactions table
-        const stats = await queryOne(`SELECT
+    /**
+     * Get transaction statistics for a user
+     */
+    static async getUserStatistics(userId) {
+        const result = await queryOne(`SELECT
         COUNT(*) as totalTransactions,
-        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completedTransactions,
-        SUM(CASE WHEN status = 'completed' THEN total_amount ELSE 0 END) as totalAmount
-       FROM transfers
-       WHERE user_id = ?`, [userId]);
+        SUM(CASE WHEN status = 'COMPLETED' THEN 1 ELSE 0 END) as completedTransactions,
+        SUM(CASE WHEN status IN ('PENDING', 'PROCESSING') THEN 1 ELSE 0 END) as pendingTransactions,
+        SUM(CASE WHEN status = 'FAILED' THEN 1 ELSE 0 END) as failedTransactions,
+        SUM(source_amount) as totalVolume,
+        SUM(fee_amount) as totalFees
+       FROM transactions
+       WHERE sender_id = ?`, [userId]);
         return {
-            totalTransactions: stats?.totalTransactions || 0,
-            completedTransactions: stats?.completedTransactions || 0,
-            totalAmount: stats?.totalAmount || 0
+            totalTransactions: parseInt(result?.totalTransactions || '0'),
+            completedTransactions: parseInt(result?.completedTransactions || '0'),
+            pendingTransactions: parseInt(result?.pendingTransactions || '0'),
+            failedTransactions: parseInt(result?.failedTransactions || '0'),
+            totalVolume: parseFloat(result?.totalVolume || '0'),
+            totalFees: parseFloat(result?.totalFees || '0')
         };
+    }
+    /**
+     * Get combined transaction history (transfers + transactions)
+     */
+    static async getCombinedHistory(userId, limit = 20, offset = 0) {
+        // Get transfers
+        const transfers = await query(`SELECT
+        id,
+        'transfer' as type,
+        sender_currency as sourceCurrency,
+        recipient_currency as targetCurrency,
+        sender_amount as sourceAmount,
+        recipient_expected_amount as targetAmount,
+        exchange_rate as exchangeRate,
+        fee_amount as feeAmount,
+        total_amount as totalAmount,
+        status,
+        tx_hash as blockchainTxHash,
+        network,
+        created_at as createdAt,
+        completed_at as completedAt
+       FROM transfers
+       WHERE user_id = ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`, [userId, limit, offset]);
+        // Get transactions
+        const transactions = await query(`SELECT
+        id,
+        'transaction' as type,
+        source_currency as sourceCurrency,
+        target_currency as targetCurrency,
+        source_amount as sourceAmount,
+        target_amount as targetAmount,
+        exchange_rate as exchangeRate,
+        fee_amount as feeAmount,
+        total_amount as totalAmount,
+        status,
+        blockchain_tx_hash as blockchainTxHash,
+        network,
+        created_at as createdAt,
+        completed_at as completedAt
+       FROM transactions
+       WHERE sender_id = ?
+       ORDER BY created_at DESC
+       LIMIT ? OFFSET ?`, [userId, limit, offset]);
+        // Combine and sort by date
+        const combined = [...transfers, ...transactions]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, limit);
+        return combined;
     }
 }

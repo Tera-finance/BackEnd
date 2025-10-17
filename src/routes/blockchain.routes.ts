@@ -47,8 +47,9 @@ router.get('/info', async (req: Request, res: Response) => {
  */
 router.get('/backend-address', async (req: Request, res: Response) => {
   try {
-    const address = await blockchainService.getBackendAddress();
-    const balance = await blockchainService.getBalance();
+    const service = getService();
+    const address = await service.getBackendAddress();
+    const balance = await service.getBalance();
 
     res.json({
       success: true,
@@ -58,7 +59,7 @@ router.get('/backend-address', async (req: Request, res: Response) => {
           wei: balance.native,
           eth: balance.formatted
         },
-        explorerUrl: blockchainService.getAddressExplorerUrl(address)
+        explorerUrl: service.getAddressExplorerUrl(address)
       }
     });
   } catch (error: any) {
@@ -111,14 +112,15 @@ router.get('/tokens', async (req: Request, res: Response) => {
 router.get('/tokens/:tokenAddress', async (req: Request, res: Response) => {
   try {
     const { tokenAddress } = req.params;
-    const tokenInfo = await blockchainService.getTokenInfo(tokenAddress);
+    const service = getService();
+    const tokenInfo = await service.getTokenInfo(tokenAddress);
 
     res.json({
       success: true,
       data: {
         address: tokenAddress,
         ...tokenInfo,
-        explorerUrl: blockchainService.getAddressExplorerUrl(tokenAddress)
+        explorerUrl: service.getAddressExplorerUrl(tokenAddress)
       }
     });
   } catch (error: any) {
@@ -139,7 +141,8 @@ router.get('/balance/:tokenAddress', authenticate, async (req: Request, res: Res
     const { tokenAddress } = req.params;
     const { address } = req.query;
 
-    const balance = await blockchainService.getTokenBalance(
+    const service = getService();
+    const balance = await service.getTokenBalance(
       tokenAddress,
       address as string | undefined
     );
@@ -177,7 +180,8 @@ router.post('/estimate-swap', async (req: Request, res: Response) => {
       });
     }
 
-    const estimate = await blockchainService.estimateSwapOutput(amountIn);
+    const service = getService();
+    const estimate = await service.estimateSwapOutput(amountIn);
 
     res.json({
       success: true,
@@ -210,7 +214,8 @@ router.post('/estimate-multi-swap', async (req: Request, res: Response) => {
       });
     }
 
-    const estimate = await blockchainService.estimateMultiTokenSwap(
+    const service = getService();
+    const estimate = await service.estimateMultiTokenSwap(
       tokenIn,
       tokenOut,
       amountIn
@@ -243,13 +248,14 @@ router.post('/estimate-multi-swap', async (req: Request, res: Response) => {
 router.get('/tx/:txHash', async (req: Request, res: Response) => {
   try {
     const { txHash } = req.params;
-    const tx = await blockchainService.getTransaction(txHash);
+    const service = getService();
+    const tx = await service.getTransaction(txHash);
 
     res.json({
       success: true,
       data: {
         transaction: tx,
-        explorerUrl: blockchainService.getExplorerUrl(txHash)
+        explorerUrl: service.getExplorerUrl(txHash)
       }
     });
   } catch (error: any) {
@@ -268,13 +274,14 @@ router.get('/tx/:txHash', async (req: Request, res: Response) => {
 router.get('/tx/:txHash/receipt', async (req: Request, res: Response) => {
   try {
     const { txHash } = req.params;
-    const receipt = await blockchainService.getTransactionReceipt(txHash);
+    const service = getService();
+    const receipt = await service.getTransactionReceipt(txHash);
 
     res.json({
       success: true,
       data: {
         receipt,
-        explorerUrl: blockchainService.getExplorerUrl(txHash)
+        explorerUrl: service.getExplorerUrl(txHash)
       }
     });
   } catch (error: any) {
@@ -295,14 +302,15 @@ router.get('/tx/:txHash/wait', async (req: Request, res: Response) => {
     const { txHash } = req.params;
     const confirmations = parseInt(req.query.confirmations as string) || 1;
 
-    const receipt = await blockchainService.waitForTransaction(txHash, confirmations);
+    const service = getService();
+    const receipt = await service.waitForTransaction(txHash, confirmations);
 
     res.json({
       success: true,
       data: {
         confirmed: receipt.status === 'success',
         receipt,
-        explorerUrl: blockchainService.getExplorerUrl(txHash)
+        explorerUrl: service.getExplorerUrl(txHash)
       }
     });
   } catch (error: any) {
@@ -310,6 +318,77 @@ router.get('/tx/:txHash/wait', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to wait for transaction'
+    });
+  }
+});
+
+// ==================== USER BALANCE ENDPOINTS ====================
+
+/**
+ * GET /api/blockchain/balance
+ * Get all token balances for authenticated user
+ */
+router.get('/balance', authenticate, async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    // Get user wallet address from database
+    const { queryOne } = await import('../utils/database.js');
+    const user = await queryOne<any>(
+      'SELECT wallet_address FROM users WHERE id = ?',
+      [req.user.id]
+    );
+
+    if (!user || !user.wallet_address) {
+      return res.status(400).json({
+        success: false,
+        error: 'User wallet address not found'
+      });
+    }
+
+    const service = getService();
+
+    // Get native balance
+    const nativeBalance = await service.getBalance(user.wallet_address);
+
+    // Get all token balances
+    const tokens = config.contracts;
+    const tokenBalances = await Promise.allSettled([
+      tokens.usdc ? service.getTokenBalance(tokens.usdc, user.wallet_address) : Promise.resolve(null),
+      tokens.idrx ? service.getTokenBalance(tokens.idrx, user.wallet_address) : Promise.resolve(null),
+      tokens.cnht ? service.getTokenBalance(tokens.cnht, user.wallet_address) : Promise.resolve(null),
+      tokens.euroc ? service.getTokenBalance(tokens.euroc, user.wallet_address) : Promise.resolve(null),
+      tokens.jpyc ? service.getTokenBalance(tokens.jpyc, user.wallet_address) : Promise.resolve(null),
+      tokens.mxnt ? service.getTokenBalance(tokens.mxnt, user.wallet_address) : Promise.resolve(null)
+    ]);
+
+    const balances: any = {
+      address: user.wallet_address,
+      native: nativeBalance,
+      tokens: {}
+    };
+
+    const tokenNames = ['usdc', 'idrx', 'cnht', 'euroc', 'jpyc', 'mxnt'];
+    tokenBalances.forEach((result, index) => {
+      if (result.status === 'fulfilled' && result.value) {
+        balances.tokens[tokenNames[index]] = result.value;
+      }
+    });
+
+    res.json({
+      success: true,
+      data: balances
+    });
+  } catch (error: any) {
+    console.error('Error getting user balances:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get user balances'
     });
   }
 });

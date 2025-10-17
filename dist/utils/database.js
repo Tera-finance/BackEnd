@@ -1,7 +1,7 @@
 import mysql from 'mysql2/promise';
 import { config } from './config.js';
-// Create MySQL connection pool
-export const pool = mysql.createPool({
+// Create MySQL connection pool with SSL configuration
+const poolConfig = {
     host: config.database.host,
     port: config.database.port,
     user: config.database.user,
@@ -11,13 +11,15 @@ export const pool = mysql.createPool({
     connectionLimit: 10,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0,
-    ...(config.database.ssl && {
-        ssl: {
-            rejectUnauthorized: true
-        }
-    })
-});
+    keepAliveInitialDelay: 0
+};
+// Add SSL configuration if enabled
+if (config.database.ssl) {
+    poolConfig.ssl = {
+        rejectUnauthorized: false // Accept self-signed certificates (Aiven, etc.)
+    };
+}
+export const pool = mysql.createPool(poolConfig);
 // Helper function to execute queries
 export const query = async (sql, params) => {
     const [rows] = await pool.execute(sql, params);

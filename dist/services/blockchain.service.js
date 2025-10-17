@@ -159,6 +159,88 @@ class BlockchainService {
             netOut: '0'
         };
     }
+    /**
+     * Approve ERC20 token for spending by a spender contract
+     */
+    async approveToken(tokenAddress, spenderAddress, amount) {
+        if (!this.walletClient || !this.account) {
+            throw new Error('Wallet not configured for transactions');
+        }
+        try {
+            console.log(`📝 Approving ${amount.toString()} tokens at ${tokenAddress} for ${spenderAddress}...`);
+            // Check current allowance
+            const currentAllowance = await this.publicClient.readContract({
+                address: tokenAddress,
+                abi: ERC20_ABI,
+                functionName: 'allowance',
+                args: [this.account.address, spenderAddress]
+            });
+            // If already approved for sufficient amount, skip
+            if (currentAllowance >= amount) {
+                console.log(`✅ Already approved: ${currentAllowance.toString()}`);
+                return '0x0'; // Return dummy tx hash
+            }
+            // Execute approval transaction
+            const hash = await this.walletClient.writeContract({
+                address: tokenAddress,
+                abi: ERC20_ABI,
+                functionName: 'approve',
+                args: [spenderAddress, amount]
+            });
+            console.log(`✅ Approval tx submitted: ${hash}`);
+            // Wait for confirmation
+            await this.waitForTransaction(hash, 1);
+            console.log(`✅ Approval confirmed`);
+            return hash;
+        }
+        catch (error) {
+            console.error('Error approving token:', error.message);
+            throw new Error(`Failed to approve token: ${error.message}`);
+        }
+    }
+    /**
+     * Execute multi-token swap
+     */
+    async executeMultiTokenSwap(tokenIn, tokenOut, amountIn, recipient, minAmountOut) {
+        if (!this.walletClient || !this.account) {
+            throw new Error('Wallet not configured for transactions');
+        }
+        if (!config.contracts.multiTokenSwap) {
+            throw new Error('MultiTokenSwap contract not configured');
+        }
+        try {
+            console.log(`🔄 Executing swap:`);
+            console.log(`   Token In: ${tokenIn}`);
+            console.log(`   Token Out: ${tokenOut}`);
+            console.log(`   Amount In: ${amountIn.toString()}`);
+            console.log(`   Recipient: ${recipient}`);
+            console.log(`   Min Amount Out: ${minAmountOut.toString()}`);
+            // Execute swap
+            const hash = await this.walletClient.writeContract({
+                address: config.contracts.multiTokenSwap,
+                abi: MULTI_TOKEN_SWAP_ABI,
+                functionName: 'swap',
+                args: [
+                    tokenIn,
+                    tokenOut,
+                    amountIn,
+                    recipient,
+                    minAmountOut
+                ]
+            });
+            console.log(`✅ Swap tx submitted: ${hash}`);
+            // Wait for confirmation
+            const receipt = await this.waitForTransaction(hash, 1);
+            console.log(`✅ Swap confirmed in block ${receipt.blockNumber}`);
+            // Parse logs to get actual amount out (simplified - in production parse the SwapExecuted event)
+            const amountOut = minAmountOut; // For now, assume minAmountOut was achieved
+            return { txHash: hash, amountOut };
+        }
+        catch (error) {
+            console.error('Error executing swap:', error.message);
+            throw new Error(`Failed to execute swap: ${error.message}`);
+        }
+    }
     // ==================== TRANSACTION STATUS ====================
     async getTransaction(txHash) {
         return await this.publicClient.getTransaction({ hash: txHash });

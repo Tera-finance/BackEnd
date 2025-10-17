@@ -1,70 +1,212 @@
 {
   "info": {
-    "name": "TrustBridge Global Remittance API",
-    "description": "Complete API collection for TrustBridge cross-border remittance system with direct mockADA flow and transaction history",
+    "name": "TrustBridge API - Base Sepolia (Complete)",
+    "description": "Complete API collection for TrustBridge backend on Base Sepolia. Includes authentication, exchange rates, transfers with blockchain swaps, transactions, PDF invoices, and balance checking. Ready for Tera-Chatbot integration.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "version": "2.0.0"
+    "version": "3.0.0"
   },
   "variable": [
     {
-      "key": "baseUrl",
+      "key": "base_url",
       "value": "http://localhost:3000",
       "type": "string"
     },
     {
-      "key": "transferId",
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "transfer_id",
       "value": "",
       "type": "string"
     }
   ],
   "item": [
     {
-      "name": "Exchange API",
+      "name": "Health Check",
       "item": [
         {
-          "name": "Get All Currencies",
+          "name": "Root Health Check",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/exchange/currencies",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "exchange", "currencies"]
-            }
-          },
-          "response": [
-            {
-              "name": "All Currencies Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/exchange/currencies",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "exchange", "currencies"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"currencies\": [\n      {\n        \"code\": \"USD\",\n        \"name\": \"US Dollar\",\n        \"symbol\": \"$\",\n        \"mockToken\": \"mockUSDC\",\n        \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\"\n      },\n      {\n        \"code\": \"IDR\",\n        \"name\": \"Indonesian Rupiah\",\n        \"symbol\": \"Rp\",\n        \"mockToken\": \"mockIDRX\",\n        \"policyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n      },\n      {\n        \"code\": \"EUR\",\n        \"name\": \"Euro\",\n        \"symbol\": \"€\",\n        \"mockToken\": \"mockEUROC\",\n        \"policyId\": \"f766f151787a989166869375f4c57cfa36c533241033c8000a5481c1\"\n      },\n      {\n        \"code\": \"CNY\",\n        \"name\": \"Chinese Yuan\",\n        \"symbol\": \"¥\",\n        \"mockToken\": \"mockCNHT\",\n        \"policyId\": \"c7bdad55621e968c6ccb0967493808c9ab50601b3b9aec77b2ba6888\"\n      },\n      {\n        \"code\": \"JPY\",\n        \"name\": \"Japanese Yen\",\n        \"symbol\": \"¥\",\n        \"mockToken\": \"mockJPYC\",\n        \"policyId\": \"7725300e8d414e0fccad0a562e3a9c585970e84e7e92d422111e1e29\"\n      },\n      {\n        \"code\": \"MXN\",\n        \"name\": \"Mexican Peso\",\n        \"symbol\": \"$\",\n        \"mockToken\": \"mockMXNT\",\n        \"policyId\": \"c73682653bd1ff615e54a3d79c00068e1f4977a7a9628f39add50dc3\"\n      }\n    ]\n  }\n}"
-            }
-          ]
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Check if API is running and get basic info"
+          }
         },
         {
-          "name": "Get Exchange Rate",
+          "name": "Health Endpoint",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/exchange/rate?from=USD&to=IDR",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login or Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whatsappNumber\": \"+6281234567890\",\n  \"countryCode\": \"ID\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with WhatsApp number or register new user"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Exchange Rates",
+      "item": [
+        {
+          "name": "Get All Exchange Rates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/exchange/rates?base=USD",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "rates"],
+              "query": [
+                {
+                  "key": "base",
+                  "value": "USD",
+                  "description": "Base currency (default: USD)"
+                }
+              ]
+            },
+            "description": "Get all exchange rates for supported currencies"
+          }
+        },
+        {
+          "name": "Get Specific Exchange Rate",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/exchange/rate?from=USD&to=IDR",
+              "host": ["{{base_url}}"],
               "path": ["api", "exchange", "rate"],
               "query": [
                 {
@@ -76,163 +218,95 @@
                   "value": "IDR"
                 }
               ]
-            }
-          },
-          "response": [
-            {
-              "name": "Exchange Rate Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/exchange/rate?from=USD&to=IDR",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "exchange", "rate"],
-                  "query": [
-                    {
-                      "key": "from",
-                      "value": "USD"
-                    },
-                    {
-                      "key": "to",
-                      "value": "IDR"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"from\": \"USD\",\n    \"to\": \"IDR\",\n    \"rate\": 15629.60,\n    \"lastUpdated\": \"2025-10-09T10:00:00.000Z\"\n  }\n}"
-            }
-          ]
+            },
+            "description": "Get exchange rate between two specific currencies"
+          }
         },
         {
-          "name": "Get Conversion Path",
+          "name": "Get Supported Currencies",
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/exchange/path?from=USD&to=IDR",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "exchange", "path"],
-              "query": [
-                {
-                  "key": "from",
-                  "value": "USD"
-                },
-                {
-                  "key": "to",
-                  "value": "IDR"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "USD to IDR via mockADA",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/exchange/path?from=USD&to=IDR",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "exchange", "path"],
-                  "query": [
-                    {
-                      "key": "from",
-                      "value": "USD"
-                    },
-                    {
-                      "key": "to",
-                      "value": "IDR"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"from\": \"USD\",\n    \"to\": \"IDR\",\n    \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n    \"usesMockToken\": true,\n    \"mockTokens\": {\n      \"hub\": \"mockADA\",\n      \"recipient\": \"mockIDRX\"\n    },\n    \"policyIds\": {\n      \"mockADA\": \"1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93\",\n      \"mockIDRX\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n    }\n  }\n}"
-            }
-          ]
+              "raw": "{{base_url}}/api/exchange/currencies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "currencies"]
+            },
+            "description": "Get list of supported currencies with symbols"
+          }
+        },
+        {
+          "name": "Get Transfer Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderCurrency\": \"USD\",\n  \"recipientCurrency\": \"IDR\",\n  \"amount\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exchange/quote",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "quote"]
+            },
+            "description": "Get complete transfer quote with fees and exchange rate"
+          }
+        },
+        {
+          "name": "Convert Amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"from\": \"USD\",\n  \"to\": \"IDR\",\n  \"amount\": 100\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/exchange/convert",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "convert"]
+            },
+            "description": "Convert amount between currencies"
+          }
         }
       ]
     },
     {
-      "name": "Transfer API",
+      "name": "Transfers",
       "item": [
         {
-          "name": "Calculate Transfer",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"senderCurrency\": \"USD\",\n  \"recipientCurrency\": \"IDR\",\n  \"amount\": 100,\n  \"paymentMethod\": \"MASTERCARD\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/transfer/calculate",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transfer", "calculate"]
-            }
-          },
-          "response": [
-            {
-              "name": "USD to IDR Calculation",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"senderCurrency\": \"USD\",\n  \"recipientCurrency\": \"IDR\",\n  \"amount\": 100,\n  \"paymentMethod\": \"MASTERCARD\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/calculate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "calculate"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"senderAmount\": 100,\n    \"senderCurrency\": \"USD\",\n    \"recipientAmount\": 1562960,\n    \"recipientCurrency\": \"IDR\",\n    \"exchangeRate\": 15629.60,\n    \"adaAmount\": 149.25,\n    \"blockchain\": {\n      \"usesMockToken\": true,\n      \"hubToken\": \"mockADA\",\n      \"recipientToken\": \"mockIDRX\",\n      \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n      \"policyIds\": {\n        \"mockADA\": \"1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93\",\n        \"mockIDRX\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n      }\n    },\n    \"fee\": {\n      \"percentage\": 1.5,\n      \"amount\": 1.5\n    },\n    \"totalAmount\": 101.5\n  }\n}"
-            }
-          ]
-        },
-        {
           "name": "Initiate Transfer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('transfer_id', jsonData.data.transferId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
               {
                 "key": "Content-Type",
                 "value": "application/json"
@@ -240,788 +314,419 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"paymentMethod\": \"MASTERCARD\",\n  \"senderCurrency\": \"USD\",\n  \"senderAmount\": 100,\n  \"recipientName\": \"John Doe\",\n  \"recipientCurrency\": \"IDR\",\n  \"recipientBank\": \"Bank BNI\",\n  \"recipientAccount\": \"1234567890\"\n}"
+              "raw": "{\n  \"whatsappNumber\": \"+6281234567890\",\n  \"paymentMethod\": \"WALLET\",\n  \"senderCurrency\": \"USD\",\n  \"senderAmount\": 100,\n  \"recipientName\": \"John Doe\",\n  \"recipientCurrency\": \"IDR\",\n  \"recipientBank\": \"BNI\",\n  \"recipientAccount\": \"1234567890\",\n  \"recipientWalletAddress\": \"0x...\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/transfer/initiate",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/api/transfer/initiate",
+              "host": ["{{base_url}}"],
               "path": ["api", "transfer", "initiate"]
-            }
-          },
-          "response": [
-            {
-              "name": "Transfer Initiated Successfully",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"paymentMethod\": \"MASTERCARD\",\n  \"senderCurrency\": \"USD\",\n  \"senderAmount\": 100,\n  \"recipientName\": \"John Doe\",\n  \"recipientCurrency\": \"IDR\",\n  \"recipientBank\": \"Bank BNI\",\n  \"recipientAccount\": \"1234567890\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/initiate",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "initiate"]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"INITIATED\",\n    \"paymentMethod\": \"MASTERCARD\",\n    \"sender\": {\n      \"currency\": \"USD\",\n      \"amount\": 100,\n      \"totalCharged\": 101.5\n    },\n    \"recipient\": {\n      \"name\": \"John Doe\",\n      \"currency\": \"IDR\",\n      \"amount\": 1562960,\n      \"bank\": \"Bank BNI\",\n      \"account\": \"1234567890\"\n    },\n    \"blockchain\": {\n      \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n      \"hubToken\": \"mockADA\",\n      \"recipientToken\": \"mockIDRX\"\n    },\n    \"fees\": {\n      \"percentage\": 1.5,\n      \"amount\": 1.5\n    },\n    \"createdAt\": \"2025-10-09T10:30:00.000Z\"\n  },\n  \"message\": \"Transfer initiated successfully. Please complete payment.\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Confirm Transfer",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"transferId\": \"{{transferId}}\",\n  \"paymentProof\": \"payment_123456\"\n}"
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/transfer/confirm",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transfer", "confirm"]
-            }
-          },
-          "response": [
-            {
-              "name": "Transfer Confirmed Successfully",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"transferId\": \"TXN-20251009-ABC123\",\n  \"paymentProof\": \"payment_123456\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/confirm",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "confirm"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"PAYMENT_CONFIRMED\",\n    \"blockchain\": {\n      \"mintTxHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\"\n    },\n    \"updatedAt\": \"2025-10-09T10:31:00.000Z\"\n  },\n  \"message\": \"Payment confirmed. Processing blockchain transactions...\"\n}"
-            }
-          ]
+            "description": "Initiate new transfer with blockchain swap execution"
+          }
         },
         {
           "name": "Get Transfer Status",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/transfer/status/TXN-20251009-ABC123",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transfer", "status", "TXN-20251009-ABC123"]
-            }
-          },
-          "response": [
-            {
-              "name": "Transfer Status Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/status/TXN-20251009-ABC123",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "status", "TXN-20251009-ABC123"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"COMPLETED\",\n    \"currentStep\": \"BANK_PAYOUT_COMPLETED\",\n    \"progress\": 100,\n    \"estimatedCompletion\": \"2025-10-09T10:50:00.000Z\"\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Transfer Details",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/transfer/details/TXN-20251009-ABC123",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "transfer", "details", "TXN-20251009-ABC123"]
-            }
-          },
-          "response": [
-            {
-              "name": "Transfer Details Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/details/TXN-20251009-ABC123",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "details", "TXN-20251009-ABC123"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"TXN-20251009-ABC123\",\n    \"status\": \"completed\",\n    \"paymentMethod\": \"MASTERCARD\",\n    \"sender\": {\n      \"currency\": \"USD\",\n      \"amount\": 100,\n      \"symbol\": \"$\",\n      \"totalCharged\": 101.5\n    },\n    \"recipient\": {\n      \"name\": \"John Doe\",\n      \"currency\": \"IDR\",\n      \"amount\": 1562960,\n      \"symbol\": \"Rp\",\n      \"bank\": \"Bank BNI\",\n      \"account\": \"1234567890\"\n    },\n    \"blockchain\": {\n      \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n      \"mockADAAmount\": 149.25,\n      \"hubToken\": \"mockADA\",\n      \"recipientToken\": \"mockIDRX\",\n      \"policyIds\": {\n        \"mockADA\": \"1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93\",\n        \"mockIDRX\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n      },\n      \"transactions\": [\n        {\n          \"step\": 1,\n          \"action\": \"Mint mockADA\",\n          \"amount\": \"149.25 mockADA\",\n          \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n          \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n          \"timestamp\": \"2025-10-09T07:45:30.000Z\"\n        },\n        {\n          \"step\": 2,\n          \"action\": \"Swap mockADA to mockIDRX\",\n          \"from\": \"149.25 mockADA\",\n          \"to\": \"1,562,960 mockIDRX\",\n          \"txHash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n          \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n          \"timestamp\": \"2025-10-09T07:46:00.000Z\"\n        }\n      ]\n    },\n    \"fees\": {\n      \"percentage\": 1.5,\n      \"amount\": 1.5\n    },\n    \"timeline\": [\n      {\n        \"status\": \"INITIATED\",\n        \"timestamp\": \"2025-10-09T07:45:00.000Z\"\n      },\n      {\n        \"status\": \"PAYMENT_CONFIRMED\",\n        \"timestamp\": \"2025-10-09T07:45:30.000Z\"\n      },\n      {\n        \"status\": \"MINTED_MOCKADA\",\n        \"timestamp\": \"2025-10-09T07:45:35.000Z\"\n      },\n      {\n        \"status\": \"SWAPPED_TO_RECIPIENT_TOKEN\",\n        \"timestamp\": \"2025-10-09T07:46:00.000Z\"\n      },\n      {\n        \"status\": \"BANK_PAYOUT_INITIATED\",\n        \"timestamp\": \"2025-10-09T07:46:30.000Z\"\n      },\n      {\n        \"status\": \"COMPLETED\",\n        \"timestamp\": \"2025-10-09T07:50:00.000Z\"\n      }\n    ],\n    \"createdAt\": \"2025-10-09T07:45:00.000Z\",\n    \"completedAt\": \"2025-10-09T07:50:00.000Z\"\n  }\n}"
-            }
-          ]
+              "raw": "{{base_url}}/api/transfer/status/{{transfer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "status", "{{transfer_id}}"]
+            },
+            "description": "Get transfer status with blockchain details"
+          }
         },
         {
           "name": "Get Transfer History",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
             "url": {
-              "raw": "{{baseUrl}}/api/transfer/history?limit=10&offset=0",
-              "host": ["{{baseUrl}}"],
+              "raw": "{{base_url}}/api/transfer/history?limit=20&offset=0",
+              "host": ["{{base_url}}"],
               "path": ["api", "transfer", "history"],
               "query": [
                 {
                   "key": "limit",
-                  "value": "10"
+                  "value": "20"
                 },
                 {
                   "key": "offset",
                   "value": "0"
-                },
-                {
-                  "key": "status",
-                  "value": "completed",
-                  "disabled": true
-                },
-                {
-                  "key": "paymentMethod",
-                  "value": "MASTERCARD",
-                  "disabled": true
                 }
               ]
-            }
-          },
-          "response": [
-            {
-              "name": "History Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/transfer/history?limit=10&offset=0",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "transfer", "history"],
-                  "query": [
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    },
-                    {
-                      "key": "offset",
-                      "value": "0"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transfers\": [\n      {\n        \"transferId\": \"TXN-20251009-ABC123\",\n        \"status\": \"completed\",\n        \"paymentMethod\": \"MASTERCARD\",\n        \"sender\": {\n          \"currency\": \"USD\",\n          \"amount\": 100,\n          \"symbol\": \"$\"\n        },\n        \"recipient\": {\n          \"name\": \"John Doe\",\n          \"currency\": \"IDR\",\n          \"amount\": 1562960,\n          \"symbol\": \"Rp\",\n          \"bank\": \"Bank BNI\",\n          \"account\": \"****7890\"\n        },\n        \"blockchain\": {\n          \"path\": [\"USD\", \"mockADA\", \"mockIDRX\", \"IDR\"],\n          \"mockADAAmount\": 149.25,\n          \"hubToken\": \"mockADA\",\n          \"recipientToken\": \"mockIDRX\",\n          \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n          \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n          \"policyIds\": {\n            \"mockADA\": \"1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93\",\n            \"mockIDRX\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\"\n          }\n        },\n        \"fees\": {\n          \"percentage\": 1.5,\n          \"amount\": 1.5\n        },\n        \"createdAt\": \"2025-10-08T10:30:00.000Z\",\n        \"completedAt\": \"2025-10-08T10:35:00.000Z\"\n      },\n      {\n        \"transferId\": \"TXN-20251008-XYZ789\",\n        \"status\": \"completed\",\n        \"paymentMethod\": \"WALLET\",\n        \"sender\": {\n          \"currency\": \"USDT\",\n          \"amount\": 200,\n          \"symbol\": \"₮\"\n        },\n        \"recipient\": {\n          \"name\": \"Jane Smith\",\n          \"currency\": \"PHP\",\n          \"amount\": 11236,\n          \"symbol\": \"₱\",\n          \"bank\": \"BDO\",\n          \"account\": \"****3210\"\n        },\n        \"blockchain\": {\n          \"path\": [\"USDT\", \"mockADA\", \"PHP\"],\n          \"mockADAAmount\": 298.50,\n          \"hubToken\": \"mockADA\",\n          \"recipientToken\": null,\n          \"txHash\": \"e77edefe96e30e1c48d2f77d6caef5dda57dd9b5be0bbc2d7c2a6926e0a7e0bb\",\n          \"cardanoScanUrl\": \"https://preprod.cardanoscan.io/transaction/e77edefe96e30e1c48d2f77d6caef5dda57dd9b5be0bbc2d7c2a6926e0a7e0bb\",\n          \"policyIds\": {\n            \"mockADA\": \"1c05bdd719318cef47811522e134bfeba87fce3f73b4892c62561c93\"\n          }\n        },\n        \"fees\": {\n          \"percentage\": 1.0,\n          \"amount\": 2.0\n        },\n        \"createdAt\": \"2025-10-08T08:15:00.000Z\",\n        \"completedAt\": \"2025-10-08T08:20:00.000Z\"\n      }\n    ],\n    \"total\": 2,\n    \"limit\": 10,\n    \"offset\": 0,\n    \"hasMore\": false\n  }\n}"
-            }
-          ]
+            },
+            "description": "Get user transfer history (paginated)"
+          }
+        },
+        {
+          "name": "Get Pending Transfers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transfer/pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "pending"]
+            },
+            "description": "Get all pending/processing transfers for user"
+          }
+        },
+        {
+          "name": "Download PDF Invoice",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transfer/invoice/{{transfer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "invoice", "{{transfer_id}}"]
+            },
+            "description": "Download PDF invoice for completed transfer"
+          }
+        },
+        {
+          "name": "Get Transfer Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transfer/{{transfer_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "{{transfer_id}}"]
+            },
+            "description": "Get complete transfer details by ID"
+          }
         }
       ]
     },
     {
-      "name": "Cardano API",
+      "name": "Transactions",
       "item": [
         {
-          "name": "Get All Deployed Tokens",
+          "name": "Get Transaction History",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/tokens",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "tokens"]
-            }
-          },
-          "response": [
-            {
-              "name": "All Tokens Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/tokens",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "tokens"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tokens\": [\n      {\n        \"id\": 1,\n        \"token_name\": \"mockUSDC\",\n        \"token_symbol\": \"USDC\",\n        \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n        \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n        \"decimals\": 6,\n        \"total_supply\": \"0\",\n        \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n        \"cardano_network\": \"Preprod\",\n        \"is_active\": true,\n        \"deployed_at\": \"2025-10-09T08:30:00.000Z\"\n      }\n    ],\n    \"count\": 6\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Token by Policy ID",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/tokens/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "tokens", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"]
-            }
-          },
-          "response": [
-            {
-              "name": "Token Details Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/tokens/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "tokens", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"token\": {\n      \"id\": 1,\n      \"token_name\": \"mockUSDC\",\n      \"token_symbol\": \"USDC\",\n      \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n      \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n      \"decimals\": 6,\n      \"total_supply\": \"1000000000000\",\n      \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n      \"cardano_network\": \"Preprod\",\n      \"description\": \"USDC stablecoin on Cardano Preprod\",\n      \"is_active\": true,\n      \"deployed_at\": \"2025-10-09T08:07:33.000Z\"\n    },\n    \"stats\": {\n      \"totalMints\": 5,\n      \"totalMintedAmount\": \"1000000000000\",\n      \"totalSwaps\": 12,\n      \"lastActivity\": \"2025-10-09T10:30:00.000Z\"\n    }\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Token by Symbol",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/tokens/symbol/USDC",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "tokens", "symbol", "USDC"]
-            }
-          },
-          "response": [
-            {
-              "name": "Token by Symbol Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/tokens/symbol/USDC",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "tokens", "symbol", "USDC"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"token\": {\n      \"id\": 1,\n      \"token_name\": \"mockUSDC\",\n      \"token_symbol\": \"USDC\",\n      \"policy_id\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n      \"asset_unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n      \"decimals\": 6,\n      \"total_supply\": \"1000000000000\",\n      \"deployment_tx_hash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n      \"cardano_network\": \"Preprod\",\n      \"is_active\": true,\n      \"deployed_at\": \"2025-10-09T08:07:33.000Z\"\n    }\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Save Mint Transaction",
-          "request": {
-            "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"amount\": \"100000000\",\n  \"recipientAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n  \"redeemerData\": null\n}"
+            "url": {
+              "raw": "{{base_url}}/api/transactions?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
             },
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/mints",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "mints"]
-            }
-          },
-          "response": [
-            {
-              "name": "Mint Saved Successfully",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"amount\": \"100000000\",\n  \"recipientAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/mints",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "mints"]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"mint\": {\n      \"id\": 1,\n      \"token_id\": 1,\n      \"amount\": \"100000000\",\n      \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n      \"tx_hash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n      \"redeemer_data\": null,\n      \"created_at\": \"2025-10-09T10:30:00.000Z\"\n    }\n  },\n  \"message\": \"Mint transaction saved successfully\"\n}"
-            }
-          ]
+            "description": "Get combined transaction history (transfers + transactions)"
+          }
         },
         {
-          "name": "Get Mint History",
+          "name": "Get User Statistics",
           "request": {
             "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/mints/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "mints", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Mint History Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/mints/4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d?limit=10",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "mints", "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"],
-                  "query": [
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"policyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n    \"mints\": [\n      {\n        \"id\": 1,\n        \"token_id\": 1,\n        \"amount\": \"100000000\",\n        \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"tx_hash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"redeemer_data\": null,\n        \"created_at\": \"2025-10-09T09:30:00.000Z\"\n      },\n      {\n        \"id\": 2,\n        \"token_id\": 1,\n        \"amount\": \"50000000\",\n        \"recipient_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"tx_hash\": \"a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/a1b2c3d4e5f6789012345678901234567890123456789012345678901234567890\",\n        \"redeemer_data\": null,\n        \"created_at\": \"2025-10-09T10:15:00.000Z\"\n      }\n    ],\n    \"count\": 2\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get All Swaps",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/swaps?limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "swaps"],
-              "query": [
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "All Swaps Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/swaps?limit=10",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "swaps"],
-                  "query": [
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swaps\": [\n      {\n        \"id\": 1,\n        \"from_token_id\": 1,\n        \"to_token_id\": 4,\n        \"from_amount\": \"100000000\",\n        \"to_amount\": \"1562960000\",\n        \"exchange_rate\": 15629.60,\n        \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n        \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"swap_type\": \"DIRECT\",\n        \"hub_token_id\": null,\n        \"created_at\": \"2025-10-09T10:30:00.000Z\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Swaps by Token",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/swaps?from=4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d&to=5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9&limit=10",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "swaps"],
-              "query": [
-                {
-                  "key": "from",
-                  "value": "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d",
-                  "description": "USDC Policy ID"
-                },
-                {
-                  "key": "to",
-                  "value": "5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9",
-                  "description": "IDRX Policy ID"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                }
-              ]
-            }
-          },
-          "response": [
-            {
-              "name": "Filtered Swaps Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/swaps?from=4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d&to=5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9&limit=10",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "swaps"],
-                  "query": [
-                    {
-                      "key": "from",
-                      "value": "4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d"
-                    },
-                    {
-                      "key": "to",
-                      "value": "5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9"
-                    },
-                    {
-                      "key": "limit",
-                      "value": "10"
-                    }
-                  ]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swaps\": [\n      {\n        \"id\": 1,\n        \"from_token_id\": 1,\n        \"to_token_id\": 4,\n        \"from_amount\": \"100000000\",\n        \"to_amount\": \"1562960000\",\n        \"exchange_rate\": 15629.60,\n        \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n        \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n        \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n        \"swap_type\": \"DIRECT\",\n        \"hub_token_id\": null,\n        \"created_at\": \"2025-10-09T10:30:00.000Z\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Save Swap Transaction",
-          "request": {
-            "method": "POST",
             "header": [
               {
-                "key": "Content-Type",
-                "value": "application/json"
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
               }
             ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"fromPolicyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"toPolicyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\",\n  \"fromAmount\": \"100000000\",\n  \"toAmount\": \"1562960000\",\n  \"exchangeRate\": 15629.60,\n  \"senderAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"recipientAddress\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n  \"txHash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n  \"swapType\": \"DIRECT\",\n  \"hubPolicyId\": null\n}"
-            },
             "url": {
-              "raw": "{{baseUrl}}/api/cardano/swaps",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "swaps"]
-            }
-          },
-          "response": [
-            {
-              "name": "Swap Saved Successfully",
-              "originalRequest": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"fromPolicyId\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d\",\n  \"toPolicyId\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9\",\n  \"fromAmount\": \"100000000\",\n  \"toAmount\": \"1562960000\",\n  \"exchangeRate\": 15629.60,\n  \"senderAddress\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n  \"recipientAddress\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n  \"txHash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n  \"swapType\": \"DIRECT\"\n}"
+              "raw": "{{base_url}}/api/transactions/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "stats"]
+            },
+            "description": "Get user transaction statistics (volume, fees, counts)"
+          }
+        },
+        {
+          "name": "Get Swap History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/swaps?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "swaps"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
                 },
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/swaps",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "swaps"]
-                }
-              },
-              "status": "Created",
-              "code": 201,
-              "_postman_previewlanguage": "json",
-              "header": [
                 {
-                  "key": "Content-Type",
-                  "value": "application/json"
+                  "key": "offset",
+                  "value": "0"
                 }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"swap\": {\n      \"id\": 1,\n      \"from_token_id\": 1,\n      \"to_token_id\": 4,\n      \"from_amount\": \"100000000\",\n      \"to_amount\": \"1562960000\",\n      \"exchange_rate\": 15629.60,\n      \"sender_address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n      \"recipient_address\": \"addr_test1qr8z9k2j3h4g5f6d7s8a9p0o1i2u3y4t5r6e7w8q9a0s1d2f3g4h5j6k7l8z9x0c1v2b3n4m5\",\n      \"tx_hash\": \"c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n      \"cardano_scan_url\": \"https://preprod.cardanoscan.io/transaction/c6e9e0d32f73f7eb6cc26dd1e0b73e58da2a6d8c2ebfb7a11285b2db7b31e5ff\",\n      \"swap_type\": \"DIRECT\",\n      \"hub_token_id\": null,\n      \"created_at\": \"2025-10-09T10:30:00.000Z\"\n    }\n  },\n  \"message\": \"Swap transaction saved successfully\"\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Backend Wallet Info",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/backend-info",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "backend-info"]
-            }
-          },
-          "response": [
-            {
-              "name": "Backend Info Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/backend-info",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "backend-info"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"addr_test1qpa0rd55emex859ggm83ukpxv5wvzlg7cx0w2c9lw2szkpeh3lvdgekjev6eyn7rr7px8e7kkc72zewmvnvkr4zxl7zqx46s82\",\n    \"publicKeyHash\": \"e1f4b11c66f9cd8707706f0e87d8f9e77c707c1d9c7d1f670f0b30c7\",\n    \"balance\": {\n      \"ada\": 1500.5,\n      \"lovelace\": \"1500500000\",\n      \"assets\": [\n        {\n          \"unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n          \"quantity\": \"5000000000\"\n        },\n        {\n          \"unit\": \"5c9a67cc3c085c4ad001492d1e460f5aea9cc2b8847c23e1683c26d9.IDRX\",\n          \"quantity\": \"75000000000\"\n        }\n      ]\n    },\n    \"isReady\": true\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Get Script UTxOs",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/script-utxos/addr_test1...",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "script-utxos", "addr_test1..."]
-            }
-          },
-          "response": [
-            {
-              "name": "Script UTxOs Response",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/script-utxos/addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "script-utxos", "addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"addr_test1wzr9rtybft7yn8tvcr4c3ul77ls9h6xk8eqnea0z5e8qs8szjq3ht\",\n    \"utxos\": [\n      {\n        \"txHash\": \"8c6af18b5d96d8de5cd5acb6e3e3b90ddea5eb90d9d69f4084e1ee85ec12acf0\",\n        \"outputIndex\": 0,\n        \"amount\": [\n          {\n            \"unit\": \"lovelace\",\n            \"quantity\": \"2000000\"\n          },\n          {\n            \"unit\": \"4cbb15ff52c7459cd734c79c1a9fae87cab77b2a49f9a83907c8125d.USDC\",\n            \"quantity\": \"100000000\"\n          }\n        ],\n        \"datum\": \"d8799fd8799f581ce1f4b11c66f9cd8707706f0e87d8f9e77c707c1d9c7d1f670f0b30c7ff1a000f4240ff\"\n      }\n    ],\n    \"count\": 1\n  }\n}"
-            }
-          ]
-        },
-        {
-          "name": "Check Transaction Status",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/cardano/tx-status/c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cardano", "tx-status", "c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a"]
-            }
-          },
-          "response": [
-            {
-              "name": "Transaction Confirmed",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/tx-status/c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "tx-status", "c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a"]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactionHash\": \"c15350addd316d9007ca98ff2533c2c16acb8fb74b812a01183146ab83a3b60a\",\n    \"confirmed\": true\n  }\n}"
+              ]
             },
-            {
-              "name": "Transaction Pending",
-              "originalRequest": {
-                "method": "GET",
-                "header": [],
-                "url": {
-                  "raw": "{{baseUrl}}/api/cardano/tx-status/abc123def456...",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "cardano", "tx-status", "abc123def456..."]
-                }
-              },
-              "status": "OK",
-              "code": 200,
-              "_postman_previewlanguage": "json",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
-              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactionHash\": \"abc123def456...\",\n    \"confirmed\": false\n  }\n}"
-            }
-          ]
+            "description": "Get blockchain swap history for user"
+          }
+        },
+        {
+          "name": "Get Transaction by Hash",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/hash/0x...",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "hash", "0x..."]
+            },
+            "description": "Get transaction by blockchain hash"
+          }
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/txn-id",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "txn-id"]
+            },
+            "description": "Get transaction by transaction ID"
+          }
         }
       ]
     },
     {
-      "name": "Health Check",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["health"]
-        }
-      },
-      "response": [
+      "name": "Blockchain",
+      "item": [
         {
-          "name": "Health Check Response",
-          "originalRequest": {
+          "name": "Network Info",
+          "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/health",
-              "host": ["{{baseUrl}}"],
-              "path": ["health"]
-            }
-          },
-          "status": "OK",
-          "code": 200,
-          "_postman_previewlanguage": "json",
-          "header": [
-            {
-              "key": "Content-Type",
-              "value": "application/json"
-            }
-          ],
-          "body": "{\n  \"status\": \"healthy\",\n  \"timestamp\": \"2025-10-09T10:30:00.000Z\",\n  \"uptime\": 3600,\n  \"services\": {\n    \"database\": \"connected\",\n    \"redis\": \"connected\",\n    \"cardano\": \"ready\"\n  }\n}"
+              "raw": "{{base_url}}/api/blockchain/info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "info"]
+            },
+            "description": "Get Base Sepolia network info (block number, gas price)"
+          }
+        },
+        {
+          "name": "Backend Wallet Address",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/backend-address",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "backend-address"]
+            },
+            "description": "Get backend wallet address and ETH balance"
+          }
+        },
+        {
+          "name": "Get All Token Addresses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tokens",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tokens"]
+            },
+            "description": "Get all configured token and contract addresses"
+          }
+        },
+        {
+          "name": "Get Token Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tokens/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tokens", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"]
+            },
+            "description": "Get token info (name, symbol, decimals)"
+          }
+        },
+        {
+          "name": "Get Token Balance (Single)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/balance/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4?address=0x...",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "balance", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"],
+              "query": [
+                {
+                  "key": "address",
+                  "value": "0x...",
+                  "description": "Optional: wallet address"
+                }
+              ]
+            },
+            "description": "Get token balance for specific address"
+          }
+        },
+        {
+          "name": "Get All User Balances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/balance",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "balance"]
+            },
+            "description": "Get all token balances for authenticated user"
+          }
+        },
+        {
+          "name": "Estimate Swap (USDC to IDRX)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountIn\": \"100000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/estimate-swap",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "estimate-swap"]
+            },
+            "description": "Estimate USDC to IDRX swap via RemittanceSwap"
+          }
+        },
+        {
+          "name": "Estimate Multi-Token Swap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n  \"tokenOut\": \"0x67cacfe96ca874ec7a78ee0d6f7044e878ba9c4c\",\n  \"amountIn\": \"100000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/estimate-multi-swap",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "estimate-multi-swap"]
+            },
+            "description": "Estimate any token pair swap via MultiTokenSwap"
+          }
+        },
+        {
+          "name": "Get Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x...",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x..."]
+            },
+            "description": "Get blockchain transaction details"
+          }
+        },
+        {
+          "name": "Get Transaction Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x.../receipt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x...", "receipt"]
+            },
+            "description": "Get transaction receipt with logs"
+          }
+        },
+        {
+          "name": "Wait for Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x.../wait?confirmations=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x...", "wait"],
+              "query": [
+                {
+                  "key": "confirmations",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Wait for transaction confirmation"
+          }
         }
       ]
     }
