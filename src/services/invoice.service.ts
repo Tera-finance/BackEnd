@@ -36,21 +36,29 @@ export class InvoiceService {
         doc.on('end', () => resolve(Buffer.concat(chunks)));
         doc.on('error', reject);
 
-        // Header
+        // Header with gradient-like effect using colors
         doc
-          .fontSize(28)
+          .fontSize(32)
           .font('Helvetica-Bold')
-          .text('TrustBridge', 50, 50)
-          .fontSize(10)
+          .fillColor('#6366F1')
+          .text('TERA', 50, 45, { continued: true })
+          .fillColor('#8B5CF6')
+          .text(' FINANCE', { continued: false })
+          .fontSize(11)
           .font('Helvetica')
+          .fillColor('#64748B')
           .text('Cross-Border Payment Receipt', 50, 85)
           .moveDown();
 
-        // Draw horizontal line
+        // Draw decorative line with gradient effect
         doc
+          .strokeColor('#6366F1')
+          .lineWidth(2)
           .moveTo(50, 110)
           .lineTo(545, 110)
-          .stroke();
+          .stroke()
+          .strokeColor('#000000')
+          .lineWidth(1);
 
         // Transfer Status Badge
         const statusColor = this.getStatusColor(data.status);
@@ -69,122 +77,180 @@ export class InvoiceService {
           .text(`Transfer ID: ${data.transferId}`, 50, statusY + 25)
           .text(`Date: ${this.formatDate(data.date)}`, 50, statusY + 40);
 
-        // Section: Sender Information
+        // Section: Sender Information with background
         let yPos = statusY + 80;
-        doc
-          .fontSize(14)
-          .font('Helvetica-Bold')
-          .fillColor('#000000')
-          .text('Sender Information', 50, yPos);
 
-        yPos += 25;
+        // Background box for sender section
         doc
-          .fontSize(11)
+          .roundedRect(45, yPos - 5, 250, 105, 5)
+          .fillAndStroke('#F8FAFC', '#E2E8F0');
+
+        doc
+          .fontSize(13)
+          .font('Helvetica-Bold')
+          .fillColor('#1E293B')
+          .text('Payment Details', 50, yPos);
+
+        yPos += 22;
+        doc
+          .fontSize(9)
           .font('Helvetica')
-          .fillColor('#333333')
-          .text('WhatsApp Number:', 50, yPos)
-          .text(data.whatsappNumber, 200, yPos);
+          .fillColor('#64748B')
+          .text('WhatsApp Number', 50, yPos)
+          .fontSize(10)
+          .fillColor('#1E293B')
+          .text(data.whatsappNumber, 50, yPos + 12);
 
-        yPos += 20;
+        yPos += 33;
         doc
-          .text('Amount Sent:', 50, yPos)
+          .fontSize(9)
+          .fillColor('#64748B')
+          .text('Amount Sent', 50, yPos)
+          .fontSize(12)
           .font('Helvetica-Bold')
-          .text(`${this.formatCurrency(data.senderAmount, data.senderCurrency)}`, 200, yPos);
+          .fillColor('#0F172A')
+          .text(`${this.formatCurrency(data.senderAmount, data.senderCurrency)}`, 50, yPos + 12);
 
-        yPos += 20;
+        yPos += 33;
         doc
+          .fontSize(9)
           .font('Helvetica')
-          .text('Fee (1.5%):', 50, yPos)
-          .text(`${this.formatCurrency(data.feeAmount, data.senderCurrency)}`, 200, yPos);
+          .fillColor('#64748B')
+          .text('Service Fee (1.5%)', 50, yPos)
+          .fontSize(10)
+          .fillColor('#1E293B')
+          .text(`${this.formatCurrency(data.feeAmount, data.senderCurrency)}`, 50, yPos + 12);
 
-        yPos += 20;
+        // Section: Recipient Information with background
+        yPos += 40;
+
+        // Background box for recipient section
         doc
+          .roundedRect(310, yPos - 5, 235, 105, 5)
+          .fillAndStroke('#F0FDF4', '#BBF7D0');
+
+        doc
+          .fontSize(13)
           .font('Helvetica-Bold')
-          .text('Total Charged:', 50, yPos)
-          .text(`${this.formatCurrency(data.totalAmount, data.senderCurrency)}`, 200, yPos);
+          .fillColor('#1E293B')
+          .text('Recipient Details', 315, yPos);
 
-        // Section: Recipient Information
-        yPos += 50;
+        const recipientYStart = yPos + 22;
         doc
-          .fontSize(14)
-          .font('Helvetica-Bold')
-          .fillColor('#000000')
-          .text('Recipient Information', 50, yPos);
-
-        yPos += 25;
-        doc
-          .fontSize(11)
+          .fontSize(9)
           .font('Helvetica')
-          .fillColor('#333333')
-          .text('Recipient Name:', 50, yPos)
-          .text(data.recipientName, 200, yPos);
-
-        yPos += 20;
-        doc
-          .text('Bank:', 50, yPos)
-          .text(data.recipientBank, 200, yPos);
-
-        yPos += 20;
-        doc
-          .text('Account Number:', 50, yPos)
-          .text(data.recipientAccount, 200, yPos);
-
-        yPos += 20;
-        doc
-          .text('Amount Received:', 50, yPos)
+          .fillColor('#64748B')
+          .text('Recipient Name', 315, recipientYStart)
+          .fontSize(10)
+          .fillColor('#1E293B')
           .font('Helvetica-Bold')
-          .fillColor('#2E7D32')
-          .text(`${this.formatCurrency(data.recipientAmount, data.recipientCurrency)}`, 200, yPos);
+          .text(data.recipientName, 315, recipientYStart + 12);
 
-        // Section: Conversion Details
-        yPos += 50;
         doc
-          .fontSize(14)
-          .font('Helvetica-Bold')
-          .fillColor('#000000')
-          .text('Conversion Details', 50, yPos);
+          .fontSize(9)
+          .font('Helvetica')
+          .fillColor('#64748B')
+          .text('Bank', 315, recipientYStart + 33)
+          .fontSize(10)
+          .fillColor('#1E293B')
+          .text(data.recipientBank, 315, recipientYStart + 45);
 
-        yPos += 25;
+        doc
+          .fontSize(9)
+          .fillColor('#64748B')
+          .text('Account Number', 315, recipientYStart + 66)
+          .fontSize(10)
+          .fillColor('#1E293B')
+          .text(data.recipientAccount, 315, recipientYStart + 78);
+
+        // Amount received - highlight box
+        yPos += 125;
+        doc
+          .roundedRect(45, yPos, 500, 45, 5)
+          .fillAndStroke('#ECFDF5', '#10B981');
+
+        doc
+          .fontSize(10)
+          .font('Helvetica')
+          .fillColor('#064E3B')
+          .text('Amount Received', 55, yPos + 10)
+          .fontSize(16)
+          .font('Helvetica-Bold')
+          .fillColor('#10B981')
+          .text(`${this.formatCurrency(data.recipientAmount, data.recipientCurrency)}`, 55, yPos + 24);
+
+        // Section: Exchange Rate Info
+        yPos += 60;
+        doc
+          .fontSize(12)
+          .font('Helvetica-Bold')
+          .fillColor('#1E293B')
+          .text('Exchange Rate Information', 50, yPos);
+
+        yPos += 22;
         const exchangeRate = typeof data.exchangeRate === 'string' ? parseFloat(data.exchangeRate) : data.exchangeRate;
-        doc
-          .fontSize(11)
-          .font('Helvetica')
-          .fillColor('#333333')
-          .text('Exchange Rate:', 50, yPos)
-          .text(`1 ${data.senderCurrency} = ${exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 200, yPos);
 
-        yPos += 20;
+        // Exchange rate box
         doc
-          .text('Conversion Path:', 50, yPos)
-          .text(`${data.senderCurrency} → ${data.recipientCurrency}`, 200, yPos);
+          .roundedRect(45, yPos, 250, 50, 5)
+          .fillAndStroke('#FEF3C7', '#F59E0B');
+
+        doc
+          .fontSize(9)
+          .font('Helvetica')
+          .fillColor('#78350F')
+          .text('Exchange Rate', 55, yPos + 10)
+          .fontSize(13)
+          .font('Helvetica-Bold')
+          .fillColor('#92400E')
+          .text(`1 ${data.senderCurrency} = ${exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 55, yPos + 26);
+
+        // Conversion path box
+        doc
+          .roundedRect(305, yPos, 240, 50, 5)
+          .fillAndStroke('#E0E7FF', '#6366F1');
+
+        doc
+          .fontSize(9)
+          .font('Helvetica')
+          .fillColor('#312E81')
+          .text('Conversion Path', 315, yPos + 10)
+          .fontSize(13)
+          .font('Helvetica-Bold')
+          .fillColor('#4338CA')
+          .text(`${data.senderCurrency} → ${data.recipientCurrency}`, 315, yPos + 26);
 
         // Section: Blockchain Information (if available)
         if (data.txHash) {
-          yPos += 50;
+          yPos += 65;
           doc
-            .fontSize(14)
+            .fontSize(12)
             .font('Helvetica-Bold')
-            .fillColor('#000000')
+            .fillColor('#1E293B')
             .text('Blockchain Transaction', 50, yPos);
 
-          yPos += 25;
+          yPos += 22;
+          // Blockchain info box
           doc
-            .fontSize(10)
-            .font('Helvetica')
-            .fillColor('#333333')
-            .text('Transaction Hash:', 50, yPos)
+            .roundedRect(45, yPos, 500, 70, 5)
+            .fillAndStroke('#DBEAFE', '#3B82F6');
+
+          doc
             .fontSize(9)
-            .text(data.txHash, 50, yPos + 15, { width: 495 });
+            .font('Helvetica')
+            .fillColor('#1E3A8A')
+            .text('Transaction Hash', 55, yPos + 10)
+            .fontSize(9)
+            .fillColor('#1E40AF')
+            .font('Courier')
+            .text(data.txHash, 55, yPos + 25, { width: 480 });
 
           if (data.blockchainTxUrl) {
-            yPos += 35;
             doc
-              .fontSize(10)
-              .fillColor('#1976D2')
-              .text('View on Explorer:', 50, yPos)
-              .link(50, yPos + 15, 495, 15, data.blockchainTxUrl)
-              .text(data.blockchainTxUrl, 50, yPos + 15, {
-                width: 495,
+              .fontSize(9)
+              .fillColor('#2563EB')
+              .font('Helvetica')
+              .text('View on Base Sepolia Explorer', 55, yPos + 48, {
                 link: data.blockchainTxUrl,
                 underline: true
               });
@@ -199,29 +265,46 @@ export class InvoiceService {
           .stroke();
 
         doc
+          .fontSize(10)
+          .fillColor('#6366F1')
+          .font('Helvetica-Bold')
+          .text('TERA FINANCE', 50, footerY + 15, {
+            align: 'center',
+            width: 495
+          })
           .fontSize(9)
-          .fillColor('#666666')
+          .fillColor('#64748B')
           .font('Helvetica')
-          .text('TrustBridge - Cross-Border Payment System', 50, footerY + 15, {
+          .text('Cross-Border Payment System', 50, footerY + 32, {
             align: 'center',
             width: 495
           })
-          .text('Powered by Base Sepolia Blockchain', 50, footerY + 30, {
+          .text('Powered by Base Sepolia Blockchain', 50, footerY + 47, {
             align: 'center',
             width: 495
           })
-          .text('For support, contact: support@trustbridge.com', 50, footerY + 45, {
+          .fillColor('#6366F1')
+          .text('For support: support@terafinance.com', 50, footerY + 62, {
             align: 'center',
-            width: 495
+            width: 495,
+            link: 'mailto:support@terafinance.com',
+            underline: true
           });
 
-        // Thank you message
+        // Thank you message with modern styling
         if (data.status === 'completed') {
           doc
-            .fontSize(12)
-            .fillColor('#2E7D32')
+            .fontSize(13)
+            .fillColor('#10B981')
             .font('Helvetica-Bold')
-            .text('Thank you for using TrustBridge!', 50, footerY - 30, {
+            .text('✓ Transaction Successful', 50, footerY - 35, {
+              align: 'center',
+              width: 495
+            })
+            .fontSize(10)
+            .fillColor('#64748B')
+            .font('Helvetica')
+            .text('Thank you for choosing Tera Finance', 50, footerY - 18, {
               align: 'center',
               width: 495
             });
@@ -313,17 +396,28 @@ export class InvoiceService {
    * Generate invoice content (shared logic)
    */
   private static generateInvoiceContent(doc: InstanceType<typeof PDFDocument>, data: InvoiceData): void {
-    // Header
+    // Header with gradient-like effect
     doc
-      .fontSize(28)
+      .fontSize(32)
       .font('Helvetica-Bold')
-      .text('TrustBridge', 50, 50)
-      .fontSize(10)
+      .fillColor('#6366F1')
+      .text('TERA', 50, 45, { continued: true })
+      .fillColor('#8B5CF6')
+      .text(' FINANCE', { continued: false })
+      .fontSize(11)
       .font('Helvetica')
+      .fillColor('#64748B')
       .text('Cross-Border Payment Receipt', 50, 85);
 
-    // Draw horizontal line
-    doc.moveTo(50, 110).lineTo(545, 110).stroke();
+    // Draw decorative line
+    doc
+      .strokeColor('#6366F1')
+      .lineWidth(2)
+      .moveTo(50, 110)
+      .lineTo(545, 110)
+      .stroke()
+      .strokeColor('#000000')
+      .lineWidth(1);
 
     // Transfer Status
     const statusColor = this.getStatusColor(data.status);
@@ -408,10 +502,17 @@ export class InvoiceService {
     const footerY = 720;
     doc.moveTo(50, footerY).lineTo(545, footerY).stroke();
     doc
+      .fontSize(10)
+      .fillColor('#6366F1')
+      .font('Helvetica-Bold')
+      .text('TERA FINANCE', 50, footerY + 15, {
+        align: 'center',
+        width: 495
+      })
       .fontSize(9)
-      .fillColor('#666666')
+      .fillColor('#64748B')
       .font('Helvetica')
-      .text('TrustBridge - Powered by Base Sepolia', 50, footerY + 15, {
+      .text('Powered by Base Sepolia Blockchain', 50, footerY + 32, {
         align: 'center',
         width: 495
       });

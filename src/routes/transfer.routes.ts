@@ -274,7 +274,7 @@ router.get('/invoice/:transferId', authenticate, async (req: Request, res: Respo
 
     // Set response headers for PDF download
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="TrustBridge-Invoice-${transferId}.pdf"`);
+    res.setHeader('Content-Disposition', `attachment; filename="TeraFinance-Invoice-${transferId}.pdf"`);
     res.setHeader('Content-Length', invoiceBuffer.length);
 
     // Send PDF buffer
