@@ -141,11 +141,36 @@ router.get('/history', authenticate, async (req: Request, res: Response) => {
 
     console.log(`✅ Found ${transfers.length} transfers`);
 
+    // Transform snake_case database fields to camelCase for frontend
+    const transformedTransfers = transfers.map((t: any) => ({
+      id: t.id,
+      userId: t.user_id,
+      whatsappNumber: t.whatsapp_number,
+      status: t.status,
+      paymentMethod: t.payment_method,
+      senderCurrency: t.sender_currency,
+      senderAmount: t.sender_amount,
+      recipientName: t.recipient_name,
+      recipientCurrency: t.recipient_currency,
+      recipientExpectedAmount: t.recipient_expected_amount,
+      recipientBank: t.recipient_bank,
+      recipientAccount: t.recipient_account,
+      exchangeRate: t.exchange_rate,
+      feePercentage: t.fee_percentage,
+      feeAmount: t.fee_amount,
+      totalAmount: t.total_amount,
+      txHash: t.tx_hash,
+      blockchainTxUrl: t.blockchain_tx_url,
+      createdAt: t.created_at,
+      updatedAt: t.updated_at,
+      completedAt: t.completed_at
+    }));
+
     res.json({
       success: true,
       data: {
-        transfers,
-        count: transfers.length,
+        transfers: transformedTransfers,
+        count: transformedTransfers.length,
         limit,
         offset
       }
