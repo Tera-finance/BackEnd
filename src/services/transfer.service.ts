@@ -118,7 +118,7 @@ export class TransferService {
       chainId: config.blockchain.chainId
     };
 
-    // Insert into database
+    // Insert into database (convert undefined to null for SQL compatibility)
     await query(
       `INSERT INTO transfers (
         id, user_id, whatsapp_number, status, payment_method,
@@ -129,13 +129,28 @@ export class TransferService {
         network, chain_id
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
-        transfer.id, transfer.userId, transfer.whatsappNumber, transfer.status, transfer.paymentMethod,
-        transfer.senderCurrency, transfer.senderAmount, transfer.senderTokenAddress, transfer.totalAmount,
-        transfer.recipientName, transfer.recipientCurrency, transfer.recipientTokenAddress,
-        transfer.recipientExpectedAmount, transfer.recipientBank, transfer.recipientAccount,
-        transfer.recipientWalletAddress,
-        transfer.exchangeRate, transfer.conversionPath, transfer.feePercentage, transfer.feeAmount,
-        transfer.network, transfer.chainId
+        transfer.id,
+        transfer.userId || null, // Convert undefined to null
+        transfer.whatsappNumber,
+        transfer.status,
+        transfer.paymentMethod,
+        transfer.senderCurrency,
+        transfer.senderAmount,
+        transfer.senderTokenAddress || null, // Convert undefined to null
+        transfer.totalAmount,
+        transfer.recipientName,
+        transfer.recipientCurrency,
+        transfer.recipientTokenAddress || null, // Convert undefined to null
+        transfer.recipientExpectedAmount,
+        transfer.recipientBank,
+        transfer.recipientAccount,
+        transfer.recipientWalletAddress || null, // Convert undefined to null
+        transfer.exchangeRate,
+        transfer.conversionPath,
+        transfer.feePercentage,
+        transfer.feeAmount,
+        transfer.network,
+        transfer.chainId
       ]
     );
 
@@ -256,7 +271,7 @@ export class TransferService {
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             transferId,
-            transfer.userId,
+            transfer.userId || null, // Convert undefined to null
             transfer.senderCurrency,
             transfer.senderTokenAddress,
             transfer.recipientCurrency,
