@@ -161,6 +161,7 @@ export class TransferService {
       // Process in background (don't await)
       this.processBlockchainTransfer(transferId).catch(error => {
         console.error(`❌ Error processing blockchain transfer ${transferId}:`, error);
+        console.error(`❌ Error stack:`, error.stack);
       });
     }
 
@@ -171,14 +172,27 @@ export class TransferService {
    * Process blockchain transfer (swap tokens)
    */
   private static async processBlockchainTransfer(transferId: string): Promise<void> {
+    console.log(`🔄 [START] Processing blockchain transfer ${transferId}`);
+
     try {
-      console.log(`🔄 Processing blockchain transfer ${transferId}`);
+      console.log(`📋 Fetching transfer details for ${transferId}...`);
 
       // Get transfer details
       const transfer = await this.getTransferById(transferId);
       if (!transfer) {
+        console.error(`❌ Transfer ${transferId} not found in database`);
         throw new Error('Transfer not found');
       }
+
+      console.log(`✅ Found transfer: ${JSON.stringify({
+        id: transfer.id,
+        status: transfer.status,
+        senderCurrency: transfer.senderCurrency,
+        recipientCurrency: transfer.recipientCurrency,
+        senderTokenAddress: transfer.senderTokenAddress,
+        recipientTokenAddress: transfer.recipientTokenAddress
+      })}`);
+
 
       // Update status to processing
       await this.updateTransferStatus(transferId, 'processing');
@@ -187,9 +201,17 @@ export class TransferService {
       const hasTokenAddresses = transfer.senderTokenAddress && transfer.recipientTokenAddress;
       const hasSwapContract = config.contracts.multiTokenSwap;
 
-      // Get blockchain service
-      const blockchainService = getBlockchainService();
-      const isBlockchainReady = blockchainService.isReady();
+      // Get blockchain service and check if ready
+      let blockchainService;
+      let isBlockchainReady = false;
+
+      try {
+        blockchainService = getBlockchainService();
+        isBlockchainReady = blockchainService?.isReady() || false;
+      } catch (error) {
+        console.warn(`⚠️  Failed to initialize blockchain service:`, error);
+        isBlockchainReady = false;
+      }
 
       // If not ready for real blockchain execution, simulate
       if (!hasTokenAddresses || !hasSwapContract || !isBlockchainReady) {
