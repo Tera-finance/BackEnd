@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import helmet, { HelmetOptions } from 'helmet';
 import { config } from './utils/config.js';
 
 // Import routes
@@ -18,7 +18,9 @@ app.get('/ping', (req, res) => {
 });
 
 // Security middleware
-app.use(helmet({
+app.use(helmet.default ? helmet.default({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}) : helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
