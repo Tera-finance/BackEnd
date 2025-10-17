@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import helmet, { HelmetOptions } from 'helmet';
 import { config } from './utils/config.js';
 
 // Import routes
@@ -18,11 +17,14 @@ app.get('/ping', (req, res) => {
 });
 
 // Security middleware
-app.use(helmet.default ? helmet.default({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}) : helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
+// Using individual helmet middleware to avoid ESM import issues
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
 
 // CORS configuration - allow frontend localhost and mini apps
 app.use(cors({
