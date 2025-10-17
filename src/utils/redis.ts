@@ -1,7 +1,6 @@
-import Redis from 'ioredis';
 import { config } from './config.js';
 
-// Mock Redis for development if Redis is not available
+// Simple in-memory Redis mock for serverless environments
 class MockRedis {
   private storage: Map<string, { value: string; expires?: number }>;
 
@@ -53,34 +52,86 @@ class MockRedis {
   }
 }
 
-let redis: Redis | MockRedis;
+// Redis client for serverless (using upstash-redis for better compatibility)
+class UpstashRedis {
+  private baseUrl: string;
+  private token: string;
 
-// Always start with mock in development
-if (config.nodeEnv === 'development') {
-  redis = new MockRedis();
-  console.log('⚠️  Using mock Redis (development mode)');
-} else {
+  constructor(url: string) {
+    // Parse Upstash Redis URL: rediss://default:token@host:port
+    const match = url.match(/rediss?:\/\/([^:]+):([^@]+)@([^:]+):(\d+)/);
+    if (!match) {
+      throw new Error('Invalid Redis URL format');
+    }
+    const [, , token, host, port] = match;
+    this.baseUrl = `https://${host}`;
+    this.token = token;
+  }
+
+  private async request(command: string[]): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/${command.join('/')}`, {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`Redis request failed: ${response.statusText}`);
+      }
+      const data = await response.json();
+      return data.result;
+    } catch (error) {
+      console.error('Redis request error:', error);
+      throw error;
+    }
+  }
+
+  async get(key: string): Promise<string | null> {
+    return await this.request(['GET', key]);
+  }
+
+  async set(key: string, value: string): Promise<string> {
+    await this.request(['SET', key, value]);
+    return 'OK';
+  }
+
+  async setex(key: string, seconds: number, value: string): Promise<string> {
+    await this.request(['SETEX', key, seconds.toString(), value]);
+    return 'OK';
+  }
+
+  async del(key: string): Promise<number> {
+    return await this.request(['DEL', key]);
+  }
+
+  async ping(): Promise<string> {
+    return await this.request(['PING']);
+  }
+
+  async quit(): Promise<string> {
+    return 'OK';
+  }
+
+  on(event: string, callback: (...args: any[]) => void): this {
+    // Event listener stub for compatibility
+    return this;
+  }
+}
+
+let redis: MockRedis | UpstashRedis;
+
+// Use Upstash Redis in production, Mock in development
+if (config.nodeEnv === 'production' && config.redis.url.includes('upstash.io')) {
   try {
-    redis = new Redis(config.redis.url, {
-      enableReadyCheck: false,
-      maxRetriesPerRequest: 1,
-      lazyConnect: true,
-      connectTimeout: 1000,
-      commandTimeout: 1000
-    });
-
-    redis.on('error', (error: Error) => {
-      console.warn('Redis connection error, falling back to mock:', error.message);
-      redis = new MockRedis();
-    });
-
-    redis.on('connect', () => {
-      console.log('✅ Connected to Redis');
-    });
+    redis = new UpstashRedis(config.redis.url);
+    console.log('✅ Using Upstash Redis (production)');
   } catch (error) {
-    console.warn('Redis not available, using in-memory mock');
+    console.warn('Failed to initialize Upstash Redis, using mock:', error);
     redis = new MockRedis();
   }
+} else {
+  redis = new MockRedis();
+  console.log('⚠️  Using mock Redis (development mode)');
 }
 
 export { redis };
