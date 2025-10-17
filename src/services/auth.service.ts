@@ -1,28 +1,46 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../utils/config.js';
-import { query, queryOne, User } from '../utils/database.js';
+import { query, queryOne } from '../utils/database.js';
 import { redis } from '../utils/redis.js';
+
+interface User {
+  id: string;
+  whatsapp_number: string;
+  country_code?: string;
+  status: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface JwtPayload {
+  userId: string;
+  whatsappNumber: string;
+}
 
 export class AuthService {
   static generateTokens(user: User) {
-    const payload = {
+    const payload: JwtPayload = {
       userId: user.id,
       whatsappNumber: user.whatsapp_number
     };
 
-    const accessToken = jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn
-    } as SignOptions);
+    const accessToken = jwt.sign(
+      payload,
+      config.jwt.secret as Secret,
+      {expiresIn: config.jwt.expiresIn} as SignOptions
+    );
 
-    const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
-      expiresIn: config.jwt.refreshExpiresIn
-    } as SignOptions);
+    const refreshToken = jwt.sign(
+      payload,
+      config.jwt.refreshSecret as Secret,
+      {expiresIn: config.jwt.refreshExpiresIn} as SignOptions
+    );
 
     return { accessToken, refreshToken };
   }
 
-  static async createUser(whatsappNumber: string, countryCode: string): Promise<User> {
+  static async createUser(whatsappNumber: string, countryCode?: string): Promise<User> {
     const existingUser = await queryOne<User>(
       'SELECT * FROM users WHERE whatsapp_number = ?',
       [whatsappNumber]
@@ -33,8 +51,9 @@ export class AuthService {
     }
 
     const userId = uuidv4();
+
     await query(
-      `INSERT INTO users (id, whatsapp_number, country_code, status) 
+      `INSERT INTO users (id, whatsapp_number, country_code, status)
        VALUES (?, ?, ?, 'PENDING_KYC')`,
       [userId, whatsappNumber, countryCode]
     );
@@ -51,7 +70,7 @@ export class AuthService {
     return newUser;
   }
 
-  static async loginOrRegister(whatsappNumber: string, countryCode: string = 'ID') {
+  static async loginOrRegister(whatsappNumber: string, countryCode: string = 'ID'): Promise<User> {
     const user = await queryOne<User>(
       'SELECT * FROM users WHERE whatsapp_number = ?',
       [whatsappNumber]
@@ -71,7 +90,7 @@ export class AuthService {
     );
   }
 
-  static async updateUserStatus(userId: string, status: 'PENDING_KYC' | 'VERIFIED' | 'SUSPENDED') {
+  static async updateUserStatus(userId: string, status: string): Promise<User> {
     await query(
       'UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?',
       [status, userId]
@@ -89,8 +108,8 @@ export class AuthService {
     return updatedUser;
   }
 
-  static async storeRefreshToken(userId: string, refreshToken: string) {
-    await redis.setex(`refresh_token:${userId}`, 7 * 24 * 60 * 60, refreshToken);
+  static async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
+    await redis.setex(`refresh_token:${userId}`, 7 * 24 * 60 * 60, refreshToken); // 7 days
   }
 
   static async validateRefreshToken(userId: string, refreshToken: string): Promise<boolean> {
@@ -98,21 +117,21 @@ export class AuthService {
     return storedToken === refreshToken;
   }
 
-  static async revokeRefreshToken(userId: string) {
+  static async revokeRefreshToken(userId: string): Promise<void> {
     await redis.del(`refresh_token:${userId}`);
   }
 
-  static verifyAccessToken(token: string) {
+  static verifyAccessToken(token: string): JwtPayload {
     try {
-      return jwt.verify(token, config.jwt.secret) as any;
+      return jwt.verify(token, config.jwt.secret) as JwtPayload;
     } catch (error) {
       throw new Error('Invalid access token');
     }
   }
 
-  static verifyRefreshToken(token: string) {
+  static verifyRefreshToken(token: string): JwtPayload {
     try {
-      return jwt.verify(token, config.jwt.refreshSecret) as any;
+      return jwt.verify(token, config.jwt.refreshSecret) as JwtPayload;
     } catch (error) {
       throw new Error('Invalid refresh token');
     }

@@ -1,0 +1,75 @@
+{
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "timestamp": "2025-10-17T00:00:00.000Z",
+  "deployer": "0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd",
+  "contracts": {
+    "RemittanceSwap": {
+      "address": "0x9354839fba186309fd2c32626e424361f57233d2",
+      "description": "USDC to IDRX swap contract",
+      "explorerUrl": "https://sepolia.basescan.org/address/0x9354839fba186309fd2c32626e424361f57233d2"
+    },
+    "MultiTokenSwap": {
+      "address": "0x2c7f17bc795be548a0b1da28d536d57f78df0543",
+      "description": "Multi-token swap contract supporting all stablecoins",
+      "explorerUrl": "https://sepolia.basescan.org/address/0x2c7f17bc795be548a0b1da28d536d57f78df0543"
+    }
+  },
+  "tokens": {
+    "USDC": {
+      "address": "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4",
+      "symbol": "USDC",
+      "name": "Mock USD Coin",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"
+    },
+    "IDRX": {
+      "address": "0x67cacfe96ca874ec7a78ee0d6f7044e878ba9c4c",
+      "symbol": "IDRX",
+      "name": "Mock Indonesian Rupiah",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x67cacfe96ca874ec7a78ee0d6f7044e878ba9c4c"
+    },
+    "CNHT": {
+      "address": "0x993f00d791509cfab774e3b97dab1f0470ffc9cf",
+      "symbol": "CNHT",
+      "name": "Mock Chinese Yuan",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x993f00d791509cfab774e3b97dab1f0470ffc9cf"
+    },
+    "EUROC": {
+      "address": "0x76c9d8f6eb862d4582784d7e2848872f83a64c1b",
+      "symbol": "EUROC",
+      "name": "Mock Euro Coin",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x76c9d8f6eb862d4582784d7e2848872f83a64c1b"
+    },
+    "JPYC": {
+      "address": "0x5246818cdeccf2a5a08267f27ad76dce8239eaec",
+      "symbol": "JPYC",
+      "name": "Mock Japanese Yen Coin",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x5246818cdeccf2a5a08267f27ad76dce8239eaec"
+    },
+    "MXNT": {
+      "address": "0x83d1214238dd4323bd165170cf9761a4718ae1db",
+      "symbol": "MXNT",
+      "name": "Mock Mexican Peso",
+      "decimals": 6,
+      "explorerUrl": "https://sepolia.basescan.org/address/0x83d1214238dd4323bd165170cf9761a4718ae1db"
+    }
+  },
+  "uniswapV3": {
+    "router": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
+    "quoter": "0xC5290058841028F1614F3A6F0F5816cAd0df5E27",
+    "factory": "0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24",
+    "poolFee": 3000
+  },
+  "notes": [
+    "All contracts deployed on Base Sepolia testnet",
+    "Mock tokens with faucet functionality for testing",
+    "Integrated with Uniswap V3 on Base Sepolia",
+    "RemittanceSwap is optimized for USDC-IDRX swaps",
+    "MultiTokenSwap supports all token pairs"
+  ]
+}

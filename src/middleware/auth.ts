@@ -1,27 +1,32 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../utils/config.js';
-import { queryOne, User } from '../utils/database.js';
+import { queryOne } from '../utils/database.js';
 
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    whatsappNumber: string;
-  };
+// Extend Express Request type to include user
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        whatsappNumber: string;
+      };
+    }
+  }
 }
 
-export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'Access token required' });
     }
 
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, config.jwt.secret) as { userId: string; whatsappNumber: string };
+    const decoded = jwt.verify(token, config.jwt.secret) as { userId: string };
 
-    const user = await queryOne<User>(
+    const user = await queryOne<any>(
       'SELECT * FROM users WHERE id = ?',
       [decoded.userId]
     );
@@ -45,13 +50,13 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
-export const requireKYC = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireKYC = async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const user = await queryOne<User>(
+    const user = await queryOne<any>(
       'SELECT * FROM users WHERE id = ?',
       [req.user.id]
     );

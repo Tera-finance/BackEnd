@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { AuthService } from '../services/auth.service.js';
-import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
 import { apiRateLimit } from '../middleware/rateLimit.js';
-import { queryOne, User } from '../utils/database.js';
+import { queryOne } from '../utils/database.js';
 
 const router = Router();
 
@@ -52,7 +52,7 @@ router.post('/refresh', apiRateLimit, async (req: Request, res: Response) => {
 
     // Verify refresh token
     const decoded = AuthService.verifyRefreshToken(refreshToken);
-    
+
     // Validate stored token
     const isValid = await AuthService.validateRefreshToken(decoded.userId, refreshToken);
     if (!isValid) {
@@ -67,7 +67,7 @@ router.post('/refresh', apiRateLimit, async (req: Request, res: Response) => {
 
     // Generate new tokens
     const tokens = AuthService.generateTokens(user);
-    
+
     // Update stored refresh token
     await AuthService.storeRefreshToken(user.id, tokens.refreshToken);
 
@@ -81,7 +81,7 @@ router.post('/refresh', apiRateLimit, async (req: Request, res: Response) => {
   }
 });
 
-router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => {
+router.post('/logout', authenticate, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -96,14 +96,14 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response) => 
   }
 });
 
-router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
+router.get('/me', authenticate, async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const user = await queryOne<User>(
-      'SELECT id, whatsapp_number, country_code, status, kyc_nft_token_id, created_at, updated_at FROM users WHERE id = ?',
+    const user = await queryOne<any>(
+      'SELECT id, whatsapp_number, country_code, status, created_at, updated_at FROM users WHERE id = ?',
       [req.user.id]
     );
 

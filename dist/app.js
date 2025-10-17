@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { config } from './utils/config.js';
 // Import routes
 import authRoutes from './routes/auth.routes.js';
-import cardanoRoutes from './routes/cardano.routes.js';
+import blockchainRoutes from './routes/blockchain.routes.js';
 import exchangeRoutes from './routes/exchange.routes.js';
 import transferRoutes from './routes/transfer.routes.js';
 import transactionRoutes from './routes/transaction.routes.js';
@@ -13,11 +13,11 @@ const app = express();
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
-// CORS configuration - allow frontend localhost
+// CORS configuration - allow frontend localhost and mini apps
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production'
+    origin: config.nodeEnv === 'production'
         ? ['https://trustbridge.izcy.tech', 'https://api-trustbridge.izcy.tech']
-        : ['http://localhost:3000', 'http://127.0.0.1:3000'], // Allow frontend localhost
+        : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
@@ -28,15 +28,25 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({
-        message: 'TrustBridge Backend API',
-        version: '1.0.0',
+        message: 'TrustBridge Backend API - Base Sepolia',
+        version: '2.0.0',
+        network: config.blockchain.network,
+        chainId: config.blockchain.chainId,
         status: 'healthy',
+        timestamp: new Date().toISOString()
+    });
+});
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        network: config.blockchain.network,
+        chainId: config.blockchain.chainId,
         timestamp: new Date().toISOString()
     });
 });
 // API Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/cardano', cardanoRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/exchange', exchangeRoutes);
 app.use('/api/transfer', transferRoutes);
 app.use('/api/transactions', transactionRoutes);

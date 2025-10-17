@@ -1,0 +1,1096 @@
+{
+  "info": {
+    "name": "TrustBridge Base Sepolia API",
+    "description": "Complete API collection for TrustBridge backend on Base Sepolia network. Includes authentication, blockchain operations, token management, and transaction endpoints.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "2.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Root Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": ["{{base_url}}"],
+              "path": [""]
+            },
+            "description": "Check if the API is running and get basic information about the backend including network details."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/",
+                  "host": ["{{base_url}}"],
+                  "path": [""]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"TrustBridge Backend API - Base Sepolia\",\n  \"version\": \"2.0.0\",\n  \"network\": \"base-sepolia\",\n  \"chainId\": 84532,\n  \"status\": \"healthy\",\n  \"timestamp\": \"2025-10-17T12:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Health Endpoint",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Dedicated health check endpoint."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/health",
+                  "host": ["{{base_url}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"healthy\",\n  \"network\": \"base-sepolia\",\n  \"chainId\": 84532,\n  \"timestamp\": \"2025-10-17T12:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login or Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refreshToken);",
+                  "    pm.collectionVariables.set('user_id', jsonData.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"whatsappNumber\": \"+6281234567890\",\n  \"countryCode\": \"ID\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with WhatsApp number or register new user if not exists. Returns JWT access and refresh tokens."
+          },
+          "response": [
+            {
+              "name": "Success - New User",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"whatsappNumber\": \"+6281234567890\",\n  \"countryCode\": \"ID\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"whatsappNumber\": \"+6281234567890\",\n    \"status\": \"PENDING_KYC\"\n  },\n  \"tokens\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('access_token', jsonData.tokens.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', jsonData.tokens.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "refresh"]
+            },
+            "description": "Refresh access token using refresh token."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/refresh",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "refresh"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Token refreshed successfully\",\n  \"tokens\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get current authenticated user information."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/me",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "me"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"user\": {\n    \"id\": \"550e8400-e29b-41d4-a716-446655440000\",\n    \"whatsapp_number\": \"+6281234567890\",\n    \"country_code\": \"ID\",\n    \"status\": \"PENDING_KYC\",\n    \"created_at\": \"2025-10-17T12:00:00.000Z\",\n    \"updated_at\": \"2025-10-17T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Logout and revoke refresh token."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/auth/logout",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Logout successful\"\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Authentication endpoints for login, registration, token refresh, and logout."
+    },
+    {
+      "name": "Blockchain",
+      "item": [
+        {
+          "name": "Network Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/info",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "info"]
+            },
+            "description": "Get Base Sepolia network information including chain ID, RPC URL, block number, and gas price."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/info",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "info"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"network\": \"base-sepolia\",\n    \"chainId\": 84532,\n    \"rpcUrl\": \"https://sepolia.base.org\",\n    \"explorerUrl\": \"https://sepolia.basescan.org\",\n    \"blockNumber\": \"12345678\",\n    \"gasPrice\": \"1000000000\",\n    \"isReady\": true\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Backend Wallet Address",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/backend-address",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "backend-address"]
+            },
+            "description": "Get backend wallet address and ETH balance."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/backend-address",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "backend-address"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd\",\n    \"balance\": {\n      \"wei\": \"1000000000000000000\",\n      \"eth\": \"1.0\"\n    },\n    \"explorerUrl\": \"https://sepolia.basescan.org/address/0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Tokens",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tokens",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tokens"]
+            },
+            "description": "Get all configured token and contract addresses."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/tokens",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "tokens"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tokens\": {\n      \"usdc\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n      \"idrx\": \"0x67cacfe96ca874ec7a78ee0d6f7044e878ba9c4c\",\n      \"cnht\": \"0x993f00d791509cfab774e3b97dab1f0470ffc9cf\",\n      \"euroc\": \"0x76c9d8f6eb862d4582784d7e2848872f83a64c1b\",\n      \"jpyc\": \"0x5246818cdeccf2a5a08267f27ad76dce8239eaec\",\n      \"mxnt\": \"0x83d1214238dd4323bd165170cf9761a4718ae1db\"\n    },\n    \"contracts\": {\n      \"remittanceSwap\": \"0x9354839fba186309fd2c32626e424361f57233d2\",\n      \"multiTokenSwap\": \"0x2c7f17bc795be548a0b1da28d536d57f78df0543\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Token Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tokens/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tokens", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"]
+            },
+            "description": "Get token information (name, symbol, decimals) for a specific token address. Example uses USDC address."
+          },
+          "response": [
+            {
+              "name": "Success - USDC",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/tokens/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "tokens", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"address\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n    \"name\": \"Mock USD Coin\",\n    \"symbol\": \"USDC\",\n    \"decimals\": 6,\n    \"explorerUrl\": \"https://sepolia.basescan.org/address/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Token Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/balance/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4?address=0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "balance", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"],
+              "query": [
+                {
+                  "key": "address",
+                  "value": "0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd",
+                  "description": "Optional: wallet address. If not provided, uses backend wallet."
+                }
+              ]
+            },
+            "description": "Get token balance for a specific address. If no address provided, returns backend wallet balance."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/balance/0x886664e1707b8e013a4242ee0dbfe753c68bf7d4?address=0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "balance", "0x886664e1707b8e013a4242ee0dbfe753c68bf7d4"],
+                  "query": [
+                    {
+                      "key": "address",
+                      "value": "0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tokenAddress\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n    \"balance\": \"1000000000\",\n    \"formatted\": \"1000.0\",\n    \"decimals\": 6\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Estimate Swap (USDC to IDRX)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amountIn\": \"100000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/estimate-swap",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "estimate-swap"]
+            },
+            "description": "Estimate output for USDC to IDRX swap using RemittanceSwap contract. Amount should be in smallest unit (6 decimals for USDC)."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amountIn\": \"100000000\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/estimate-swap",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "estimate-swap"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"amountIn\": \"100000000\",\n    \"estimatedOut\": \"1570000000\",\n    \"fee\": \"500000\",\n    \"netOut\": \"1570000000\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Estimate Multi-Token Swap",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenIn\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n  \"tokenOut\": \"0x76c9d8f6eb862d4582784d7e2848872f83a64c1b\",\n  \"amountIn\": \"100000000\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/estimate-multi-swap",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "estimate-multi-swap"]
+            },
+            "description": "Estimate output for any token pair using MultiTokenSwap contract. Example: USDC to EUROC."
+          },
+          "response": [
+            {
+              "name": "Success - USDC to EUROC",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tokenIn\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n  \"tokenOut\": \"0x76c9d8f6eb862d4582784d7e2848872f83a64c1b\",\n  \"amountIn\": \"100000000\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/estimate-multi-swap",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "estimate-multi-swap"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"tokenIn\": \"0x886664e1707b8e013a4242ee0dbfe753c68bf7d4\",\n    \"tokenOut\": \"0x76c9d8f6eb862d4582784d7e2848872f83a64c1b\",\n    \"amountIn\": \"100000000\",\n    \"estimatedOut\": \"92000000\",\n    \"fee\": \"500000\",\n    \"netOut\": \"92000000\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d"]
+            },
+            "description": "Get transaction details by transaction hash."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transaction\": {\n      \"hash\": \"0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\",\n      \"from\": \"0x00d1e028a70ee8d422bfd1132b50464e2d21fbcd\",\n      \"to\": \"0x9354839fba186309fd2c32626e424361f57233d2\",\n      \"value\": \"0\",\n      \"gas\": \"217184\",\n      \"gasPrice\": \"1000297\",\n      \"nonce\": 45,\n      \"blockNumber\": 32379132,\n      \"blockHash\": \"0x1ff37de582549f52c35ea12277f5074298936d93784a01fab72291ed2064b798\"\n    },\n    \"explorerUrl\": \"https://sepolia.basescan.org/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction Receipt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d/receipt",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d", "receipt"]
+            },
+            "description": "Get transaction receipt including logs and events."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d/receipt",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d", "receipt"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"receipt\": {\n      \"transactionHash\": \"0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\",\n      \"status\": \"success\",\n      \"blockNumber\": 32379132,\n      \"gasUsed\": \"156496\",\n      \"logs\": [\n        {\n          \"address\": \"0x9354839fba186309fd2c32626e424361f57233d2\",\n          \"topics\": [\n            \"0x28c738dbec11a1bed94ba127a3712d54bcd39cf4ae95b6ebd671aaf10fd0287b\"\n          ],\n          \"data\": \"0x...\"\n        }\n      ]\n    },\n    \"explorerUrl\": \"https://sepolia.basescan.org/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Wait for Transaction Confirmation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d/wait?confirmations=1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d", "wait"],
+              "query": [
+                {
+                  "key": "confirmations",
+                  "value": "1",
+                  "description": "Number of confirmations to wait for (default: 1)"
+                }
+              ]
+            },
+            "description": "Wait for transaction to be confirmed with specified number of confirmations."
+          },
+          "response": [
+            {
+              "name": "Success - Confirmed",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/blockchain/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d/wait?confirmations=1",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "blockchain", "tx", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d", "wait"],
+                  "query": [
+                    {
+                      "key": "confirmations",
+                      "value": "1"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"confirmed\": true,\n    \"receipt\": {\n      \"transactionHash\": \"0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\",\n      \"status\": \"success\",\n      \"blockNumber\": 32379132,\n      \"gasUsed\": \"156496\"\n    },\n    \"explorerUrl\": \"https://sepolia.basescan.org/tx/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\"\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Blockchain operations including network info, token management, swap estimation, and transaction monitoring on Base Sepolia."
+    },
+    {
+      "name": "Exchange",
+      "item": [
+        {
+          "name": "Get Exchange Rates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/exchange/rates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "rates"]
+            },
+            "description": "Get fiat currency exchange rates."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/exchange/rates",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "exchange", "rates"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"rates\": {\n      \"USD-IDR\": 15700,\n      \"USD-CNY\": 7.24,\n      \"USD-EUR\": 0.92,\n      \"USD-JPY\": 149.50,\n      \"USD-MXN\": 17.05\n    },\n    \"timestamp\": \"2025-10-17T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Supported Currencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/exchange/currencies",
+              "host": ["{{base_url}}"],
+              "path": ["api", "exchange", "currencies"]
+            },
+            "description": "Get list of supported fiat currencies."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/exchange/currencies",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "exchange", "currencies"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"currencies\": [\n      {\n        \"code\": \"USD\",\n        \"symbol\": \"$\",\n        \"name\": \"US Dollar\"\n      },\n      {\n        \"code\": \"IDR\",\n        \"symbol\": \"Rp\",\n        \"name\": \"Indonesian Rupiah\"\n      },\n      {\n        \"code\": \"CNY\",\n        \"symbol\": \"¥\",\n        \"name\": \"Chinese Yuan\"\n      },\n      {\n        \"code\": \"EUR\",\n        \"symbol\": \"€\",\n        \"name\": \"Euro\"\n      },\n      {\n        \"code\": \"JPY\",\n        \"symbol\": \"¥\",\n        \"name\": \"Japanese Yen\"\n      },\n      {\n        \"code\": \"MXN\",\n        \"symbol\": \"$\",\n        \"name\": \"Mexican Peso\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Exchange rate and currency information endpoints."
+    },
+    {
+      "name": "Transfer",
+      "item": [
+        {
+          "name": "Initiate Transfer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"100\",\n  \"recipient\": \"+6281987654321\",\n  \"currency\": \"IDRX\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/transfer/initiate",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "initiate"]
+            },
+            "description": "Initiate a new transfer to a recipient."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": \"100\",\n  \"recipient\": \"+6281987654321\",\n  \"currency\": \"IDRX\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/transfer/initiate",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "transfer", "initiate"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Transfer initiated\",\n  \"data\": {\n    \"transferId\": \"transfer_1729166400000\",\n    \"amount\": \"100\",\n    \"recipient\": \"+6281987654321\",\n    \"currency\": \"IDRX\",\n    \"status\": \"pending\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Transfer Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transfer/transfer_1729166400000",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transfer", "transfer_1729166400000"]
+            },
+            "description": "Get status of a specific transfer."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/transfer/transfer_1729166400000",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "transfer", "transfer_1729166400000"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transferId\": \"transfer_1729166400000\",\n    \"status\": \"completed\",\n    \"timestamp\": \"2025-10-17T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Transfer initiation and status tracking."
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Get Transaction History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions"]
+            },
+            "description": "Get user's transaction history."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/transactions",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "transactions"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"transactions\": [],\n    \"count\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Transaction Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/transactions/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d",
+              "host": ["{{base_url}}"],
+              "path": ["api", "transactions", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d"]
+            },
+            "description": "Get details of a specific transaction."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{access_token}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/api/transactions/0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "transactions", "0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"txHash\": \"0x20af465b0a9cd5e7cb236c687ff30dbafafbf2b2e3abe51ba448444382f0b18d\",\n    \"status\": \"confirmed\",\n    \"timestamp\": \"2025-10-17T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        }
+      ],
+      "description": "Transaction history and details endpoints."
+    }
+  ]
+}

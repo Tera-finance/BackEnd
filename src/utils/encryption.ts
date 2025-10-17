@@ -2,7 +2,7 @@ import CryptoJS from 'crypto-js';
 import { config } from './config.js';
 
 export class EncryptionUtil {
-  private static readonly secretKey = config.encryption.key;
+  private static secretKey = config.encryption.key;
 
   static encrypt(text: string): string {
     return CryptoJS.AES.encrypt(text, this.secretKey).toString();

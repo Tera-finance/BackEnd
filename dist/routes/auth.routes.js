@@ -86,7 +86,7 @@ router.get('/me', authenticate, async (req, res) => {
         if (!req.user) {
             return res.status(401).json({ error: 'Authentication required' });
         }
-        const user = await queryOne('SELECT id, whatsapp_number, country_code, status, kyc_nft_token_id, created_at, updated_at FROM users WHERE id = ?', [req.user.id]);
+        const user = await queryOne('SELECT id, whatsapp_number, country_code, status, created_at, updated_at FROM users WHERE id = ?', [req.user.id]);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }

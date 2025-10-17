@@ -9,12 +9,8 @@ export class AuthService {
             userId: user.id,
             whatsappNumber: user.whatsapp_number
         };
-        const accessToken = jwt.sign(payload, config.jwt.secret, {
-            expiresIn: config.jwt.expiresIn
-        });
-        const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
-            expiresIn: config.jwt.refreshExpiresIn
-        });
+        const accessToken = jwt.sign(payload, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+        const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, { expiresIn: config.jwt.refreshExpiresIn });
         return { accessToken, refreshToken };
     }
     static async createUser(whatsappNumber, countryCode) {
@@ -23,7 +19,7 @@ export class AuthService {
             throw new Error('User already exists');
         }
         const userId = uuidv4();
-        await query(`INSERT INTO users (id, whatsapp_number, country_code, status) 
+        await query(`INSERT INTO users (id, whatsapp_number, country_code, status)
        VALUES (?, ?, ?, 'PENDING_KYC')`, [userId, whatsappNumber, countryCode]);
         const newUser = await queryOne('SELECT * FROM users WHERE id = ?', [userId]);
         if (!newUser) {
@@ -50,7 +46,7 @@ export class AuthService {
         return updatedUser;
     }
     static async storeRefreshToken(userId, refreshToken) {
-        await redis.setex(`refresh_token:${userId}`, 7 * 24 * 60 * 60, refreshToken);
+        await redis.setex(`refresh_token:${userId}`, 7 * 24 * 60 * 60, refreshToken); // 7 days
     }
     static async validateRefreshToken(userId, refreshToken) {
         const storedToken = await redis.get(`refresh_token:${userId}`);

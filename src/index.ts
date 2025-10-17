@@ -21,24 +21,25 @@ async function startServer() {
     const server = app.listen(config.port, () => {
       console.log(`🚀 TrustBridge Backend running on port ${config.port}`);
       console.log(`🌍 Environment: ${config.nodeEnv}`);
-      console.log(`� Cardano Network: ${config.cardano.network}`);
+      console.log(`⛓️  Blockchain Network: ${config.blockchain.network}`);
+      console.log(`🔗 Chain ID: ${config.blockchain.chainId}`);
       console.log(`💾 Database: MySQL`);
     });
 
     // Graceful shutdown
     const gracefulShutdown = (signal: string) => {
       console.log(`\n${signal} received. Starting graceful shutdown...`);
-      
+
       server.close(async () => {
         console.log('HTTP server closed.');
-        
+
         try {
           await closePool();
           console.log('MySQL connection pool closed.');
-          
+
           await redis.quit();
           console.log('Redis connection closed.');
-          
+
           console.log('Graceful shutdown completed.');
           process.exit(0);
         } catch (error) {

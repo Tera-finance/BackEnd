@@ -3,29 +3,33 @@ import { config } from './config.js';
 
 // Mock Redis for development if Redis is not available
 class MockRedis {
-  private storage = new Map<string, { value: string; expires?: number }>();
+  private storage: Map<string, { value: string; expires?: number }>;
+
+  constructor() {
+    this.storage = new Map();
+  }
 
   async get(key: string): Promise<string | null> {
     const item = this.storage.get(key);
     if (!item) return null;
-    
+
     if (item.expires && Date.now() > item.expires) {
       this.storage.delete(key);
       return null;
     }
-    
+
     return item.value;
   }
 
-  async set(key: string, value: string): Promise<'OK'> {
+  async set(key: string, value: string): Promise<string> {
     this.storage.set(key, { value });
     return 'OK';
   }
 
-  async setex(key: string, seconds: number, value: string): Promise<'OK'> {
-    this.storage.set(key, { 
-      value, 
-      expires: Date.now() + (seconds * 1000) 
+  async setex(key: string, seconds: number, value: string): Promise<string> {
+    this.storage.set(key, {
+      value,
+      expires: Date.now() + (seconds * 1000)
     });
     return 'OK';
   }
@@ -34,11 +38,11 @@ class MockRedis {
     return this.storage.delete(key) ? 1 : 0;
   }
 
-  async ping(): Promise<'PONG'> {
+  async ping(): Promise<string> {
     return 'PONG';
   }
 
-  async quit(): Promise<'OK'> {
+  async quit(): Promise<string> {
     this.storage.clear();
     return 'OK';
   }
@@ -65,7 +69,7 @@ if (config.nodeEnv === 'development') {
       commandTimeout: 1000
     });
 
-    redis.on('error', (error) => {
+    redis.on('error', (error: Error) => {
       console.warn('Redis connection error, falling back to mock:', error.message);
       redis = new MockRedis();
     });
@@ -73,7 +77,6 @@ if (config.nodeEnv === 'development') {
     redis.on('connect', () => {
       console.log('✅ Connected to Redis');
     });
-
   } catch (error) {
     console.warn('Redis not available, using in-memory mock');
     redis = new MockRedis();

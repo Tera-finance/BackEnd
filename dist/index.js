@@ -19,7 +19,8 @@ async function startServer() {
         const server = app.listen(config.port, () => {
             console.log(`🚀 TrustBridge Backend running on port ${config.port}`);
             console.log(`🌍 Environment: ${config.nodeEnv}`);
-            console.log(`� Cardano Network: ${config.cardano.network}`);
+            console.log(`⛓️  Blockchain Network: ${config.blockchain.network}`);
+            console.log(`🔗 Chain ID: ${config.blockchain.chainId}`);
             console.log(`💾 Database: MySQL`);
         });
         // Graceful shutdown
