@@ -223,24 +223,24 @@ router.get('/invoice/:transferId', authenticate, async (req: Request, res: Respo
       });
     }
 
-    // Generate PDF invoice
+    // Generate PDF invoice (ensure all numbers are properly parsed)
     const invoiceBuffer = await InvoiceService.generateInvoice({
       transferId: transfer.id,
       date: transfer.createdAt,
-      senderAmount: transfer.senderAmount,
+      senderAmount: typeof transfer.senderAmount === 'string' ? parseFloat(transfer.senderAmount) : transfer.senderAmount,
       senderCurrency: transfer.senderCurrency,
-      recipientAmount: transfer.recipientExpectedAmount,
+      recipientAmount: typeof transfer.recipientExpectedAmount === 'string' ? parseFloat(transfer.recipientExpectedAmount) : transfer.recipientExpectedAmount,
       recipientCurrency: transfer.recipientCurrency,
       recipientName: transfer.recipientName,
       recipientBank: transfer.recipientBank,
       recipientAccount: transfer.recipientAccount,
-      exchangeRate: transfer.exchangeRate,
-      feeAmount: transfer.feeAmount,
-      feePercentage: transfer.feePercentage,
-      totalAmount: transfer.totalAmount,
+      exchangeRate: typeof transfer.exchangeRate === 'string' ? parseFloat(transfer.exchangeRate) : transfer.exchangeRate,
+      feeAmount: typeof transfer.feeAmount === 'string' ? parseFloat(transfer.feeAmount) : transfer.feeAmount,
+      feePercentage: typeof transfer.feePercentage === 'string' ? parseFloat(transfer.feePercentage) : transfer.feePercentage,
+      totalAmount: typeof transfer.totalAmount === 'string' ? parseFloat(transfer.totalAmount) : transfer.totalAmount,
       status: transfer.status,
-      txHash: transfer.txHash,
-      blockchainTxUrl: transfer.blockchainTxUrl,
+      txHash: transfer.txHash || undefined,
+      blockchainTxUrl: transfer.blockchainTxUrl || undefined,
       whatsappNumber: transfer.whatsappNumber
     });
 

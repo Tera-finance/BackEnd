@@ -4,17 +4,17 @@ import { PassThrough } from 'stream';
 interface InvoiceData {
   transferId: string;
   date: Date;
-  senderAmount: number;
+  senderAmount: number | string;
   senderCurrency: string;
-  recipientAmount: number;
+  recipientAmount: number | string;
   recipientCurrency: string;
   recipientName: string;
   recipientBank: string;
   recipientAccount: string;
-  exchangeRate: number;
-  feeAmount: number;
-  feePercentage: number;
-  totalAmount: number;
+  exchangeRate: number | string;
+  feeAmount: number | string;
+  feePercentage: number | string;
+  totalAmount: number | string;
   status: string;
   txHash?: string;
   blockchainTxUrl?: string;
@@ -145,12 +145,13 @@ export class InvoiceService {
           .text('Conversion Details', 50, yPos);
 
         yPos += 25;
+        const exchangeRate = typeof data.exchangeRate === 'string' ? parseFloat(data.exchangeRate) : data.exchangeRate;
         doc
           .fontSize(11)
           .font('Helvetica')
           .fillColor('#333333')
           .text('Exchange Rate:', 50, yPos)
-          .text(`1 ${data.senderCurrency} = ${data.exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 200, yPos);
+          .text(`1 ${data.senderCurrency} = ${exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 200, yPos);
 
         yPos += 20;
         doc
@@ -237,7 +238,15 @@ export class InvoiceService {
   /**
    * Format currency with proper symbol
    */
-  private static formatCurrency(amount: number, currency: string): string {
+  private static formatCurrency(amount: number | string, currency: string): string {
+    // Convert to number if string
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+
+    // Handle invalid numbers
+    if (isNaN(numAmount)) {
+      return `${currency} 0`;
+    }
+
     const symbols: Record<string, string> = {
       'USD': '$',
       'IDR': 'Rp',
@@ -251,11 +260,11 @@ export class InvoiceService {
     const decimals = ['IDR', 'JPY'].includes(currency) ? 0 : 2;
 
     if (currency === 'IDR') {
-      return `${symbol} ${amount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      return `${symbol} ${numAmount.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     } else if (currency === 'JPY') {
-      return `${symbol}${amount.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+      return `${symbol}${numAmount.toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     } else {
-      return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
+      return `${symbol}${numAmount.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}`;
     }
   }
 
