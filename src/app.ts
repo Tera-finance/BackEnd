@@ -29,7 +29,12 @@ app.use((req, res, next) => {
 // CORS configuration - allow frontend localhost and mini apps
 app.use(cors({
   origin: config.nodeEnv === 'production'
-    ? ['https://trustbridge.izcy.tech', 'https://api-trustbridge.izcy.tech']
+    ? [
+        'https://trustbridge.izcy.tech',
+        'https://api-trustbridge.izcy.tech',
+        'https://tera-finance.vercel.app',
+        'https://tera-finance-backend.vercel.app'
+      ]
     : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
