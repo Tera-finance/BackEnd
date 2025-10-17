@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon --watch src --exec tsx src/index.ts",
-    "build": "tsc",
+    "build": "echo 'No build required for Vercel serverless functions'",
     "start": "node dist/index.js",
     "db:init": "tsx src/utils/initDb.ts",
     "import:deployment": "tsx scripts/import-deployment.ts"
