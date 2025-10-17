@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.env
+*.md
+.gitignore
+tsconfig.json
+ecosystem.config.js
+deploy.sh
+setup-vps.sh
+nginx.conf
+run-api-tests.sh
+scripts
+sql
+*.sql
+.claude
+TrustBridge*.postman_collection.json
