@@ -75,21 +75,28 @@ router.get('/backend-address', async (req: Request, res: Response) => {
 
 /**
  * GET /api/blockchain/tokens
- * Get all configured token addresses
+ * Get all configured token addresses from database
  */
 router.get('/tokens', async (req: Request, res: Response) => {
   try {
+    const { query } = await import('../utils/database.js');
+
+    // Fetch all active tokens from database
+    const tokens = await query<any>(
+      'SELECT token_symbol, token_name, contract_address, decimals, network, chain_id FROM evm_tokens WHERE is_active = TRUE ORDER BY token_symbol'
+    );
+
     res.json({
       success: true,
       data: {
-        tokens: {
-          usdc: config.contracts.usdc,
-          idrx: config.contracts.idrx,
-          cnht: config.contracts.cnht,
-          euroc: config.contracts.euroc,
-          jpyc: config.contracts.jpyc,
-          mxnt: config.contracts.mxnt
-        },
+        tokens: tokens.map(t => ({
+          symbol: t.token_symbol,
+          name: t.token_name,
+          address: t.contract_address,
+          decimals: t.decimals,
+          network: t.network,
+          chainId: t.chain_id
+        })),
         contracts: {
           remittanceSwap: config.contracts.remittanceSwap,
           multiTokenSwap: config.contracts.multiTokenSwap

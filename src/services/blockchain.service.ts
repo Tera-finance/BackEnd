@@ -30,7 +30,7 @@ const MULTI_TOKEN_SWAP_ABI = parseAbi([
   'event SwapExecuted(address indexed sender, address indexed recipient, address indexed tokenIn, address tokenOut, uint256 amountIn, uint256 amountOut, uint256 fee)'
 ]);
 
-// ERC20 ABI
+// ERC20 ABI (with mint function for testnet tokens)
 const ERC20_ABI = parseAbi([
   'function balanceOf(address account) external view returns (uint256)',
   'function transfer(address to, uint256 amount) external returns (bool)',
@@ -39,6 +39,7 @@ const ERC20_ABI = parseAbi([
   'function decimals() external view returns (uint8)',
   'function symbol() external view returns (string)',
   'function name() external view returns (string)',
+  'function mint(address to, uint256 amount) external returns (bool)',
   'event Transfer(address indexed from, address indexed to, uint256 value)',
   'event Approval(address indexed owner, address indexed spender, uint256 value)'
 ]);
@@ -193,6 +194,42 @@ class BlockchainService {
       fee: '0',
       netOut: '0'
     };
+  }
+
+  /**
+   * Mint ERC20 tokens (for testnet/mock tokens only)
+   */
+  async mintToken(
+    tokenAddress: string,
+    recipient: string,
+    amount: bigint
+  ): Promise<string> {
+    if (!this.walletClient || !this.account) {
+      throw new Error('Wallet not configured for transactions');
+    }
+
+    try {
+      console.log(`🪙 Minting ${amount.toString()} tokens at ${tokenAddress} to ${recipient}...`);
+
+      // Execute mint transaction
+      const hash = await this.walletClient.writeContract({
+        address: tokenAddress as Address,
+        abi: ERC20_ABI,
+        functionName: 'mint',
+        args: [recipient as Address, amount]
+      });
+
+      console.log(`✅ Mint tx submitted: ${hash}`);
+
+      // Wait for confirmation
+      await this.waitForTransaction(hash, 1);
+      console.log(`✅ Mint confirmed`);
+
+      return hash;
+    } catch (error: any) {
+      console.error('Error minting token:', error.message);
+      throw new Error(`Failed to mint token: ${error.message}`);
+    }
   }
 
   /**

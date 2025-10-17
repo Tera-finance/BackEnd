@@ -289,6 +289,69 @@ router.get('/invoice/:transferId', authenticate, async (req: Request, res: Respo
 });
 
 /**
+ * POST /api/transfer/wallet-submit
+ * Submit wallet transfer after user has signed transaction
+ */
+router.post('/wallet-submit', authenticate, async (req: Request, res: Response) => {
+  try {
+    const {
+      whatsappNumber,
+      senderCurrency,
+      senderAmount,
+      recipientName,
+      recipientCurrency,
+      recipientBank,
+      recipientAccount,
+      txHash,
+      tokenInAddress,
+      tokenOutAddress
+    } = req.body;
+
+    // Validation
+    if (!whatsappNumber || !senderCurrency || !senderAmount || !recipientName ||
+        !recipientCurrency || !recipientBank || !recipientAccount || !txHash ||
+        !tokenInAddress || !tokenOutAddress) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    // Create wallet transfer record with transaction hash
+    const transfer = await TransferService.createWalletTransfer({
+      userId: req.user?.id,
+      whatsappNumber,
+      senderCurrency,
+      senderAmount: parseFloat(senderAmount),
+      recipientName,
+      recipientCurrency,
+      recipientBank,
+      recipientAccount,
+      txHash,
+      tokenInAddress,
+      tokenOutAddress
+    });
+
+    res.json({
+      success: true,
+      message: 'Wallet transfer recorded successfully',
+      data: {
+        transferId: transfer.id,
+        status: transfer.status,
+        txHash: transfer.txHash,
+        blockchainTxUrl: transfer.blockchainTxUrl
+      }
+    });
+  } catch (error: any) {
+    console.error('Error submitting wallet transfer:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to submit wallet transfer'
+    });
+  }
+});
+
+/**
  * GET /api/transfer/:transferId
  * Get transfer details by ID
  */

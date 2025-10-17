@@ -62,195 +62,195 @@ export class InvoiceService {
 
         // Transfer Status Badge
         const statusColor = this.getStatusColor(data.status);
-        const statusY = 130;
+        const statusY = 125;
         doc
-          .fontSize(12)
+          .fontSize(11)
           .font('Helvetica-Bold')
           .fillColor(statusColor)
           .text(`Status: ${data.status.toUpperCase()}`, 50, statusY);
 
         // Transfer ID and Date
         doc
-          .fontSize(10)
+          .fontSize(9)
           .fillColor('#333333')
           .font('Helvetica')
-          .text(`Transfer ID: ${data.transferId}`, 50, statusY + 25)
-          .text(`Date: ${this.formatDate(data.date)}`, 50, statusY + 40);
+          .text(`Transfer ID: ${data.transferId}`, 50, statusY + 20)
+          .text(`Date: ${this.formatDate(data.date)}`, 50, statusY + 33);
 
         // Section: Sender Information with background
-        let yPos = statusY + 80;
+        let yPos = statusY + 60;
 
         // Background box for sender section
         doc
-          .roundedRect(45, yPos - 5, 250, 105, 5)
+          .roundedRect(45, yPos - 5, 250, 95, 5)
           .fillAndStroke('#F8FAFC', '#E2E8F0');
 
         doc
-          .fontSize(13)
+          .fontSize(12)
           .font('Helvetica-Bold')
           .fillColor('#1E293B')
           .text('Payment Details', 50, yPos);
 
-        yPos += 22;
+        yPos += 20;
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#64748B')
           .text('WhatsApp Number', 50, yPos)
-          .fontSize(10)
-          .fillColor('#1E293B')
-          .text(data.whatsappNumber, 50, yPos + 12);
-
-        yPos += 33;
-        doc
           .fontSize(9)
+          .fillColor('#1E293B')
+          .text(data.whatsappNumber, 50, yPos + 11);
+
+        yPos += 30;
+        doc
+          .fontSize(8)
           .fillColor('#64748B')
           .text('Amount Sent', 50, yPos)
-          .fontSize(12)
+          .fontSize(11)
           .font('Helvetica-Bold')
           .fillColor('#0F172A')
-          .text(`${this.formatCurrency(data.senderAmount, data.senderCurrency)}`, 50, yPos + 12);
+          .text(`${this.formatCurrency(data.senderAmount, data.senderCurrency)}`, 50, yPos + 11);
 
-        yPos += 33;
+        yPos += 30;
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#64748B')
           .text('Service Fee (1.5%)', 50, yPos)
-          .fontSize(10)
+          .fontSize(9)
           .fillColor('#1E293B')
-          .text(`${this.formatCurrency(data.feeAmount, data.senderCurrency)}`, 50, yPos + 12);
+          .text(`${this.formatCurrency(data.feeAmount, data.senderCurrency)}`, 50, yPos + 11);
 
         // Section: Recipient Information with background
-        yPos += 40;
+        yPos += 35;
 
         // Background box for recipient section
         doc
-          .roundedRect(310, yPos - 5, 235, 105, 5)
+          .roundedRect(310, yPos - 5, 235, 95, 5)
           .fillAndStroke('#F0FDF4', '#BBF7D0');
 
         doc
-          .fontSize(13)
+          .fontSize(12)
           .font('Helvetica-Bold')
           .fillColor('#1E293B')
           .text('Recipient Details', 315, yPos);
 
-        const recipientYStart = yPos + 22;
+        const recipientYStart = yPos + 20;
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#64748B')
           .text('Recipient Name', 315, recipientYStart)
-          .fontSize(10)
+          .fontSize(9)
           .fillColor('#1E293B')
           .font('Helvetica-Bold')
-          .text(data.recipientName, 315, recipientYStart + 12);
+          .text(data.recipientName, 315, recipientYStart + 11);
 
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#64748B')
-          .text('Bank', 315, recipientYStart + 33)
-          .fontSize(10)
+          .text('Bank', 315, recipientYStart + 30)
+          .fontSize(9)
           .fillColor('#1E293B')
-          .text(data.recipientBank, 315, recipientYStart + 45);
+          .text(data.recipientBank, 315, recipientYStart + 41);
 
         doc
-          .fontSize(9)
+          .fontSize(8)
           .fillColor('#64748B')
-          .text('Account Number', 315, recipientYStart + 66)
-          .fontSize(10)
+          .text('Account Number', 315, recipientYStart + 60)
+          .fontSize(9)
           .fillColor('#1E293B')
-          .text(data.recipientAccount, 315, recipientYStart + 78);
+          .text(data.recipientAccount, 315, recipientYStart + 71);
 
         // Amount received - highlight box
-        yPos += 125;
+        yPos += 115;
         doc
-          .roundedRect(45, yPos, 500, 45, 5)
+          .roundedRect(45, yPos, 500, 40, 5)
           .fillAndStroke('#ECFDF5', '#10B981');
 
         doc
-          .fontSize(10)
+          .fontSize(9)
           .font('Helvetica')
           .fillColor('#064E3B')
-          .text('Amount Received', 55, yPos + 10)
-          .fontSize(16)
+          .text('Amount Received', 55, yPos + 8)
+          .fontSize(14)
           .font('Helvetica-Bold')
           .fillColor('#10B981')
-          .text(`${this.formatCurrency(data.recipientAmount, data.recipientCurrency)}`, 55, yPos + 24);
+          .text(`${this.formatCurrency(data.recipientAmount, data.recipientCurrency)}`, 55, yPos + 22);
 
         // Section: Exchange Rate Info
-        yPos += 60;
+        yPos += 52;
         doc
-          .fontSize(12)
+          .fontSize(11)
           .font('Helvetica-Bold')
           .fillColor('#1E293B')
           .text('Exchange Rate Information', 50, yPos);
 
-        yPos += 22;
+        yPos += 20;
         const exchangeRate = typeof data.exchangeRate === 'string' ? parseFloat(data.exchangeRate) : data.exchangeRate;
 
         // Exchange rate box
         doc
-          .roundedRect(45, yPos, 250, 50, 5)
+          .roundedRect(45, yPos, 250, 44, 5)
           .fillAndStroke('#FEF3C7', '#F59E0B');
 
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#78350F')
-          .text('Exchange Rate', 55, yPos + 10)
-          .fontSize(13)
+          .text('Exchange Rate', 55, yPos + 8)
+          .fontSize(11)
           .font('Helvetica-Bold')
           .fillColor('#92400E')
-          .text(`1 ${data.senderCurrency} = ${exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 55, yPos + 26);
+          .text(`1 ${data.senderCurrency} = ${exchangeRate.toFixed(4)} ${data.recipientCurrency}`, 55, yPos + 23);
 
         // Conversion path box
         doc
-          .roundedRect(305, yPos, 240, 50, 5)
+          .roundedRect(305, yPos, 240, 44, 5)
           .fillAndStroke('#E0E7FF', '#6366F1');
 
         doc
-          .fontSize(9)
+          .fontSize(8)
           .font('Helvetica')
           .fillColor('#312E81')
-          .text('Conversion Path', 315, yPos + 10)
-          .fontSize(13)
+          .text('Conversion Path', 315, yPos + 8)
+          .fontSize(11)
           .font('Helvetica-Bold')
           .fillColor('#4338CA')
-          .text(`${data.senderCurrency} → ${data.recipientCurrency}`, 315, yPos + 26);
+          .text(`${data.senderCurrency} → ${data.recipientCurrency}`, 315, yPos + 23);
 
         // Section: Blockchain Information (if available)
         if (data.txHash) {
-          yPos += 65;
+          yPos += 56;
           doc
-            .fontSize(12)
+            .fontSize(11)
             .font('Helvetica-Bold')
             .fillColor('#1E293B')
             .text('Blockchain Transaction', 50, yPos);
 
-          yPos += 22;
+          yPos += 18;
           // Blockchain info box
           doc
-            .roundedRect(45, yPos, 500, 70, 5)
+            .roundedRect(45, yPos, 500, 60, 5)
             .fillAndStroke('#DBEAFE', '#3B82F6');
 
           doc
-            .fontSize(9)
+            .fontSize(8)
             .font('Helvetica')
             .fillColor('#1E3A8A')
-            .text('Transaction Hash', 55, yPos + 10)
-            .fontSize(9)
+            .text('Transaction Hash', 55, yPos + 8)
+            .fontSize(8)
             .fillColor('#1E40AF')
             .font('Courier')
-            .text(data.txHash, 55, yPos + 25, { width: 480 });
+            .text(data.txHash, 55, yPos + 21, { width: 480 });
 
           if (data.blockchainTxUrl) {
             doc
               .fontSize(9)
               .fillColor('#2563EB')
               .font('Helvetica')
-              .text('View on Base Sepolia Explorer', 55, yPos + 48, {
+              .text('View on Basescan Explorer', 55, yPos + 42, {
                 link: data.blockchainTxUrl,
                 underline: true
               });
