@@ -434,4 +434,17 @@ export class TransferService {
     );
     return results;
   }
+
+  /**
+   * Get pending transfers by WhatsApp number
+   */
+  static async getPendingTransfersByWhatsApp(whatsappNumber: string): Promise<Transfer[]> {
+    const results = await query<Transfer>(
+      `SELECT * FROM transfers
+       WHERE whatsapp_number = ? AND status IN ('pending', 'processing')
+       ORDER BY created_at DESC`,
+      [whatsappNumber]
+    );
+    return results;
+  }
 }

@@ -126,11 +126,10 @@ router.get('/history', authenticate, async (req: Request, res: Response) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    const transfers = await TransferService.getTransferHistory(
-      req.user.id,
-      limit,
-      offset
-    );
+    // Use whatsappNumber instead of userId since we don't have user IDs yet
+    const transfers = req.user.id
+      ? await TransferService.getTransferHistory(req.user.id, limit, offset)
+      : await TransferService.getTransferHistoryByWhatsApp(req.user.whatsappNumber, limit, offset);
 
     res.json({
       success: true,
@@ -163,7 +162,10 @@ router.get('/pending', authenticate, async (req: Request, res: Response) => {
       });
     }
 
-    const transfers = await TransferService.getPendingTransfers(req.user.id);
+    // Use whatsappNumber to get pending transfers if no userId
+    const transfers = req.user.id
+      ? await TransferService.getPendingTransfers(req.user.id)
+      : await TransferService.getPendingTransfersByWhatsApp(req.user.whatsappNumber);
 
     res.json({
       success: true,
