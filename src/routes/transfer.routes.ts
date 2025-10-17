@@ -123,13 +123,23 @@ router.get('/history', authenticate, async (req: Request, res: Response) => {
       });
     }
 
+    console.log('📋 Fetching transfer history for user:', {
+      userId: req.user.id,
+      whatsappNumber: req.user.whatsappNumber
+    });
+
     const limit = parseInt(req.query.limit as string) || 20;
     const offset = parseInt(req.query.offset as string) || 0;
 
-    // Use whatsappNumber instead of userId since we don't have user IDs yet
-    const transfers = req.user.id
-      ? await TransferService.getTransferHistory(req.user.id, limit, offset)
-      : await TransferService.getTransferHistoryByWhatsApp(req.user.whatsappNumber, limit, offset);
+    // Always use whatsappNumber since it's more reliable
+    console.log(`📞 Using whatsappNumber: ${req.user.whatsappNumber}, limit: ${limit}, offset: ${offset}`);
+    const transfers = await TransferService.getTransferHistoryByWhatsApp(
+      req.user.whatsappNumber,
+      limit,
+      offset
+    );
+
+    console.log(`✅ Found ${transfers.length} transfers`);
 
     res.json({
       success: true,
@@ -141,7 +151,12 @@ router.get('/history', authenticate, async (req: Request, res: Response) => {
       }
     });
   } catch (error: any) {
-    console.error('Error getting transfer history:', error);
+    console.error('❌ Error getting transfer history:', error);
+    console.error('❌ Error details:', {
+      message: error.message,
+      stack: error.stack,
+      user: req.user
+    });
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to get transfer history'

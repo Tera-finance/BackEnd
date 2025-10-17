@@ -412,14 +412,31 @@ export class TransferService {
     limit: number = 20,
     offset: number = 0
   ): Promise<Transfer[]> {
-    const results = await query<Transfer>(
-      `SELECT * FROM transfers
-       WHERE whatsapp_number = ?
-       ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-      [whatsappNumber, limit, offset]
-    );
-    return results;
+    console.log(`📞 Querying transfers by WhatsApp:`, {
+      whatsappNumber,
+      limit,
+      offset,
+      types: {
+        whatsappNumber: typeof whatsappNumber,
+        limit: typeof limit,
+        offset: typeof offset
+      }
+    });
+
+    try {
+      const results = await query<Transfer>(
+        `SELECT * FROM transfers
+         WHERE whatsapp_number = ?
+         ORDER BY created_at DESC
+         LIMIT ? OFFSET ?`,
+        [whatsappNumber, limit, offset]
+      );
+      console.log(`✅ Query successful, found ${results.length} transfers`);
+      return results;
+    } catch (error) {
+      console.error(`❌ Query failed:`, error);
+      throw error;
+    }
   }
 
   /**
