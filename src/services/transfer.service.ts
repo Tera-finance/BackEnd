@@ -394,13 +394,13 @@ export class TransferService {
     limit: number = 20,
     offset: number = 0
   ): Promise<Transfer[]> {
-    const results = await query<Transfer>(
-      `SELECT * FROM transfers
+    // Use string interpolation for LIMIT/OFFSET to avoid MySQL parameter issues
+    const sql = `SELECT * FROM transfers
        WHERE user_id = ?
        ORDER BY created_at DESC
-       LIMIT ? OFFSET ?`,
-      [userId, limit, offset]
-    );
+       LIMIT ${parseInt(String(limit))} OFFSET ${parseInt(String(offset))}`;
+
+    const results = await query<Transfer>(sql, [userId]);
     return results;
   }
 
@@ -424,13 +424,16 @@ export class TransferService {
     });
 
     try {
-      const results = await query<Transfer>(
-        `SELECT * FROM transfers
+      // Build query with string interpolation for LIMIT/OFFSET to avoid MySQL parameter issues
+      const sql = `SELECT * FROM transfers
          WHERE whatsapp_number = ?
          ORDER BY created_at DESC
-         LIMIT ? OFFSET ?`,
-        [whatsappNumber, limit, offset]
-      );
+         LIMIT ${parseInt(String(limit))} OFFSET ${parseInt(String(offset))}`;
+
+      console.log(`🔍 SQL Query:`, sql);
+      console.log(`🔍 Parameters:`, [whatsappNumber]);
+
+      const results = await query<Transfer>(sql, [whatsappNumber]);
       console.log(`✅ Query successful, found ${results.length} transfers`);
       return results;
     } catch (error) {
