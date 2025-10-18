@@ -181,19 +181,42 @@ class BlockchainService {
   async estimateMultiTokenSwap(
     tokenIn: string,
     tokenOut: string,
-    amountIn: string
-  ): Promise<{ estimatedOut: string; fee: string; netOut: string }> {
+    amountIn: bigint
+  ): Promise<{ estimatedOut: bigint; fee: bigint; netOut: bigint }> {
     if (!config.contracts.multiTokenSwap) {
       throw new Error('MultiTokenSwap contract address not configured');
     }
 
-    // Note: This function may not exist on the contract if not exposed
-    // Using simulation instead for now
-    return {
-      estimatedOut: '0',
-      fee: '0',
-      netOut: '0'
-    };
+    try {
+      console.log(`📊 Getting quote from MultiTokenSwap contract...`);
+      console.log(`   Token In: ${tokenIn}`);
+      console.log(`   Token Out: ${tokenOut}`);
+      console.log(`   Amount In: ${amountIn.toString()}`);
+
+      // Call getEstimatedOutput on the contract
+      const result = await this.publicClient.readContract({
+        address: config.contracts.multiTokenSwap as Address,
+        abi: MULTI_TOKEN_SWAP_ABI,
+        functionName: 'getEstimatedOutput',
+        args: [tokenIn as Address, tokenOut as Address, amountIn]
+      }) as [bigint, bigint, bigint];
+
+      const [estimatedOut, fee, netOut] = result;
+
+      console.log(`✅ Quote received:`);
+      console.log(`   Estimated Out: ${estimatedOut.toString()}`);
+      console.log(`   Fee: ${fee.toString()}`);
+      console.log(`   Net Out: ${netOut.toString()}`);
+
+      return {
+        estimatedOut,
+        fee,
+        netOut
+      };
+    } catch (error: any) {
+      console.error('Error getting quote:', error.message);
+      throw new Error(`Failed to get quote: ${error.message}`);
+    }
   }
 
   /**

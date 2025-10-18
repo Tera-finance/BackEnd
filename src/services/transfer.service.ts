@@ -252,10 +252,23 @@ export class TransferService {
         // Calculate amounts in token units (assuming 6 decimals for all tokens)
         const decimals = 6;
         const amountIn = BigInt(Math.floor(transfer.senderAmount * Math.pow(10, decimals)));
-        const minAmountOut = BigInt(Math.floor(transfer.recipientExpectedAmount * Math.pow(10, decimals) * 0.98)); // 2% slippage
 
         console.log(`   Amount In: ${amountIn.toString()} (${transfer.senderAmount} * 10^${decimals})`);
-        console.log(`   Min Amount Out: ${minAmountOut.toString()} (${transfer.recipientExpectedAmount} * 10^${decimals} * 0.98)`);
+
+        // Get on-chain quote to determine actual expected output
+        console.log(`📊 Getting on-chain quote...`);
+        const quote = await blockchainService.estimateMultiTokenSwap(
+          transfer.senderTokenAddress,
+          transfer.recipientTokenAddress,
+          amountIn
+        );
+
+        // Apply slippage tolerance to the actual quote (2% slippage)
+        const slippageTolerance = 0.02; // 2%
+        const minAmountOut = BigInt(Math.floor(Number(quote.netOut) * (1 - slippageTolerance)));
+
+        console.log(`   Expected Out (from contract): ${quote.netOut.toString()}`);
+        console.log(`   Min Amount Out (with 2% slippage): ${minAmountOut.toString()}`);
 
         // Step 1: Approve token spending
         console.log(`📝 Step 1: Approving token...`);
@@ -411,10 +424,23 @@ export class TransferService {
         // Calculate amounts in token units (assuming 6 decimals for all tokens)
         const decimals = 6;
         const amountToMint = BigInt(Math.floor(transfer.senderAmount * Math.pow(10, decimals)));
-        const minAmountOut = BigInt(Math.floor(transfer.recipientExpectedAmount * Math.pow(10, decimals) * 0.98)); // 2% slippage
 
         console.log(`   Amount to Mint: ${amountToMint.toString()} (${transfer.senderAmount} ${transfer.senderCurrency})`);
-        console.log(`   Min Amount Out: ${minAmountOut.toString()} (${transfer.recipientExpectedAmount} ${transfer.recipientCurrency})`);
+
+        // Get on-chain quote to determine actual expected output
+        console.log(`📊 Getting on-chain quote...`);
+        const quote = await blockchainService.estimateMultiTokenSwap(
+          transfer.senderTokenAddress,
+          transfer.recipientTokenAddress,
+          amountToMint
+        );
+
+        // Apply slippage tolerance to the actual quote (2% slippage)
+        const slippageTolerance = 0.02; // 2%
+        const minAmountOut = BigInt(Math.floor(Number(quote.netOut) * (1 - slippageTolerance)));
+
+        console.log(`   Expected Out (from contract): ${quote.netOut.toString()}`);
+        console.log(`   Min Amount Out (with 2% slippage): ${minAmountOut.toString()}`);
 
         // Step 1: Mint source token (e.g., USDC)
         console.log(`🪙 Step 1: Minting ${transfer.senderCurrency}...`);
